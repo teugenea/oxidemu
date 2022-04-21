@@ -1,5 +1,7 @@
 use std::fs::File;
 use std::io::{BufReader, Read};
+use rand::Rng;
+use rand::thread_rng;
 
 const START_ADDRESS: usize = 0x200;
 const REGISTERS_COUNT: usize = 16;
@@ -9,7 +11,7 @@ const KEYS_COUNT: usize = 16;
 const VIDEO_MEMORY_SIZE: usize = 64 * 32;
 
 const FONTSER_START_ADDRESS: usize = 0x50;
-const FONT_SET: Vec<u8> = vec![
+const FONT_SET: [u8; 80] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
 	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -45,7 +47,7 @@ pub struct Chip8
 
 impl Chip8 {
 
-    pub fn new(file_name: &String) -> Chip8 {
+    pub fn new(file_name: &String) -> Self {
         let mut result = Chip8 {
             registers: vec![0u8; REGISTERS_COUNT],
             memory: vec![0u8; MEMORY_SIZE],
@@ -56,8 +58,8 @@ impl Chip8 {
             pc: START_ADDRESS as u16,
             sp: 0,
             opcode: 0,
-            delay_timer: 60,
-            sound_timer: 60
+            delay_timer: 0,
+            sound_timer: 0
         };
         Chip8::load_fontset(&mut result);
         Chip8::load_rom(&mut result, file_name);
@@ -71,7 +73,9 @@ impl Chip8 {
             i += 1;
         }
     }
-    
+
+    fn get_rand() -> u8 { thread_rng().gen_range(0..256) as u8}
+
     fn load_rom(&mut self, file_name: &String) { 
         let mut input = BufReader::new(File::open(file_name).expect("Cannot open file file_name"));
         let mut bytes = Vec::new();
@@ -92,4 +96,21 @@ impl Chip8 {
             i += 1;
         }
     }
+
+    //CLS
+    fn op_00e0(&mut self) {
+        self.video.fill(0);
+    }
+
+    //RET
+    fn op_00ee(&mut self) {
+        self.sp -= 1;
+        self.pc = self.stack[self.sp as usize];
+    }
+
+    //JP
+    fn op_1nnn(&mut self) {
+        self.pc = self.opcode & 0x0FFF;
+    }
+
 }
