@@ -5,7 +5,7 @@ use common::bus::*;
 #[test]
 fn write_out_of_bounds() {
     let mut m = Memory::new(100);
-    let wr = m.writeByte(200, 3);
+    let wr = m.write_byte(200, 3);
     match wr {
         Ok(_) => panic!("Write is ok"),
         Err(err) => assert_eq!(err.kind, EmulErrorKind::OutOfBounds)
@@ -14,28 +14,28 @@ fn write_out_of_bounds() {
 
 #[test]
 fn read_out_of_bounds() {
-    let mut memory = Memory::new(100);
-    let rd = memory.readByte(150);
+    let memory = Memory::new(100);
+    let rd = memory.read_byte(150);
     match rd {
-        Ok(_) => panic!("Read is ok"),
+        Ok(_) => panic!("Read is successful but should not be"),
         Err(err) => assert_eq!(err.kind, EmulErrorKind::OutOfBounds)
     }
 }
 
 #[test]
-fn write_and_read() {
+fn read_and_write() {
     let mut memory = Memory::new(100);
     let data = 3u8;
     let addr = 55;
-    let wr = memory.writeByte(addr, data);
+    let wr = memory.write_byte(addr, data);
     match wr {
         Ok(_) => {},
-        Err(err) => panic!("Cannot write")
+        Err(err) => panic!("Cannot write: {}", err)
     }
-    let rd = memory.readByte(addr);
+    let rd = memory.read_byte(addr);
     match rd {
         Ok(b) => assert_eq!(b, data),
-        Err(err) => panic!("Cannot read")
+        Err(err) => panic!("Cannot read: {}", err)
     }
 }
 
@@ -44,9 +44,9 @@ fn write_block_out_of_bounds() {
     let mut memory = Memory::new(100);
     let data = vec![1u8; 5];
     let addr = 98;
-    let wr = memory.writeBlock(addr, data);
+    let wr = memory.write_block(addr, data);
     match wr {
-        Ok(_) => panic!("Write block is successful"),
+        Ok(_) => panic!("Write block is successful but should not be"),
         Err(err) => assert_eq!(err.kind, EmulErrorKind::OutOfBounds)
     }
 }
@@ -56,9 +56,9 @@ fn read_and_write_block() {
     let mut memory = Memory::new(100);
     let data = vec![1u8; 5];
     let addr = 95;
-    let wr = memory.writeBlock(addr, data);
+    let wr = memory.write_block(addr, data);
     match wr {
         Ok(_) => {},
-        Err(err) => panic!("Cannot write")
+        Err(err) => panic!("Cannot write: {}", err)
     }
 }

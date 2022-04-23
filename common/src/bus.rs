@@ -2,15 +2,34 @@ use crate::errors::{EmulError, EmulErrorKind};
 
 use std::collections::HashMap;
 use std::cmp::PartialEq;
+use std::fmt::Display;
 
-#[derive(Hash, Clone, Eq)]
+#[derive(Hash, Clone, Copy, Eq, Debug)]
+#[repr(u8)]
 pub enum DeviceType {
     Memory,
     VideoMemory,
 }
 
+impl DeviceType {
+    fn to_string(&self) -> &'static str {
+        match self {
+            DeviceType::Memory => "Memory",
+            DeviceType::VideoMemory => "VideoMemory"
+        }
+    }
+}
+
 impl PartialEq for DeviceType {
-    fn eq(&self, other: &DeviceType) -> bool { self == other }
+    fn eq(&self, other: &DeviceType) -> bool {
+        *self as u8 == *other as u8
+    }
+}
+
+impl Display for DeviceType {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        write!(formatter, "{}", self.to_string())
+    }
 }
 
 pub trait Debuggable {
@@ -18,12 +37,12 @@ pub trait Debuggable {
 }
 
 pub trait Readable : Debuggable {
-    fn readByte(&self, addr: usize) -> Result<u8, EmulError>;
+    fn read_byte(&self, addr: usize) -> Result<u8, EmulError>;
 }
 
 pub trait Writable : Debuggable {
-    fn writeByte(&mut self, addr: usize, value: u8) -> Result<(), EmulError>;
-    fn writeBlock(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError>;
+    fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), EmulError>;
+    fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError>;
 }
 
 pub trait Rw : Readable + Writable { }
@@ -48,20 +67,28 @@ impl Bus {
         let b = self.devs.get(d_type).take();
         match b {
             Some(b) => {
-                match b.readByte(addr) {
+                match b.read_byte(addr) {
                     Ok(byte) => Ok(byte),
                     Err(err) => Err(err)
                 }
             },
-            _ => Err(EmulError::new(EmulErrorKind::DeviceNotFound, String::from("")))
+            _ => {
+                let msg = format!("Cannot read ");
+                Err(EmulError::new(EmulErrorKind::DeviceNotFound, msg))
+            }
         }
     }
 
-    pub fn write(&mut self, d_type: &DeviceType, addr: usize, value: u8) {
-        let b = self.devs.get_mut(d_type).take();
-        match b {
-            Some(b) => { b.writeByte(addr, value); },
-            _ => {}
+    pub fn write(&mut self, d_type: DeviceType, addr: usize, value: u8) -> Result<(), EmulError> {
+        print!("*** get dev to write\n");
+        let device = self.devs.get_mut(&d_type);
+        print!("*** write\n");
+        match device {
+            Some(b) => b.write_byte(addr, value),
+            _ => {
+                let msg = format!("");
+                Err(EmulError::new(EmulErrorKind::DeviceNotFound, msg))
+            }
         }
     }
 

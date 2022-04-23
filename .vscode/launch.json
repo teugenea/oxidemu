@@ -5,15 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug",
+            "name": "Debug Test",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\target\\debug\\rusty_chip8.exe",
+            "program": "${workspaceFolder}\\target\\debug\\deps\\bus_test-f51b493c186d1fe5.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false
-          }
+        },
+        {
+            "name": "Debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\target\\debug\\",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        }
     ]
 }
