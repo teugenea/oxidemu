@@ -61,10 +61,12 @@ impl Chip8 {
         
     }
 
+    //RET
     fn op_00ee(&mut self) {
 
     }
 
+    //JP
     fn op_1nnn(&mut self) {
 
     }

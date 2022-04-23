@@ -21,13 +21,17 @@ impl Debuggable for Memory {
 }
 
 impl Readable for Memory {
-    fn readByte(&self, addr: usize) -> u8 {
-        self.memory[addr]
+    fn readByte(&self, addr: usize) -> Result<u8, EmulError> {
+        if self.size < addr {
+            let msg = format!("Cannot read from {0}", self.get_name());
+            return Err(EmulError::new(EmulErrorKind::OutOfBounds, msg))
+        }
+        Ok(self.memory[addr])
     }
 }
 
 impl Writable for Memory {
-    fn write(&mut self, addr: usize, value: u8) -> Result<(), EmulError> {
+    fn writeByte(&mut self, addr: usize, value: u8) -> Result<(), EmulError> {
         if addr > self.memory.len() {
             let msg = format!("Cannot write to {0} because address is out of bounds. Targer address is {1} but available size is {2}",
                 self.get_name(), addr, self.size);
@@ -39,7 +43,7 @@ impl Writable for Memory {
     fn writeBlock(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError> {
         let block_end = start_addr + data.len();
         if block_end > self.size {
-            let msg = format!("Cannot write BLOCK to {0} because is overflows memory. ",
+            let msg = format!("Cannot write BLOCK to {0} because it overflows memory. ",
                 self.get_name());
             return Err(EmulError::new(EmulErrorKind::OutOfBounds, msg));
         }
@@ -55,28 +59,3 @@ impl Writable for Memory {
 impl Rw for Memory {
 
 }
-
-/*
-impl Loadable for Memory {
-    fn load_rom(&mut self, file_name: &str, start_address: usize) {
-        let mut input = BufReader::new(File::open(file_name).expect("Cannot open file file_name"));
-        let mut bytes = Vec::new();
-        loop {
-            use std::io::ErrorKind;
-            let mut buffer = [0u8; std::mem::size_of::<u8>()];
-            let res = input.read_exact(&mut buffer);
-            match res {
-                Err(error) if error.kind() == ErrorKind::UnexpectedEof => break,
-                _ => {}
-            }
-            res.expect("error during read");
-            bytes.push(u8::from_le_bytes(buffer));
-        }
-        let mut i = start_address;
-        for byte in bytes {
-            self.memory[i] = byte;
-            i += 1;
-        }
-    }
-}
-*/

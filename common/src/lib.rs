@@ -3,3 +3,6 @@ pub mod bus;
 pub mod cpu;
 pub mod utils;
 pub mod errors;
+
+#[cfg(test)]
+mod tests;

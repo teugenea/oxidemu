@@ -18,11 +18,11 @@ pub trait Debuggable {
 }
 
 pub trait Readable : Debuggable {
-    fn readByte(&self, addr: usize) -> u8;
+    fn readByte(&self, addr: usize) -> Result<u8, EmulError>;
 }
 
 pub trait Writable : Debuggable {
-    fn write(&mut self, addr: usize, value: u8) -> Result<(), EmulError>;
+    fn writeByte(&mut self, addr: usize, value: u8) -> Result<(), EmulError>;
     fn writeBlock(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError>;
 }
 
@@ -44,18 +44,23 @@ impl Bus {
         self.devs.insert(d_type, dev);
     }
 
-    pub fn read(&self, d_type: &DeviceType, addr: usize) -> Result<u8, &'static str> {
+    pub fn read(&self, d_type: &DeviceType, addr: usize) -> Result<u8, EmulError> {
         let b = self.devs.get(d_type).take();
         match b {
-            Some(b) => Ok(b.readByte(addr)),
-            _ => Err("No such device")
+            Some(b) => {
+                match b.readByte(addr) {
+                    Ok(byte) => Ok(byte),
+                    Err(err) => Err(err)
+                }
+            },
+            _ => Err(EmulError::new(EmulErrorKind::DeviceNotFound, String::from("")))
         }
     }
 
     pub fn write(&mut self, d_type: &DeviceType, addr: usize, value: u8) {
-        let mut b = self.devs.get_mut(d_type).take();
+        let b = self.devs.get_mut(d_type).take();
         match b {
-            Some(b) => { b.write(addr, value); },
+            Some(b) => { b.writeByte(addr, value); },
             _ => {}
         }
     }

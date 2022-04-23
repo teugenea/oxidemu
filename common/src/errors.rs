@@ -1,13 +1,14 @@
 
 
+#[derive(Debug, PartialEq)]
 pub enum EmulErrorKind {
     OutOfBounds,
     DeviceNotFound,
 }
 
 pub struct EmulError {
-    kind: EmulErrorKind,
-    message: String,
+    pub kind: EmulErrorKind,
+    pub message: String,
 }
 
 impl EmulError {
