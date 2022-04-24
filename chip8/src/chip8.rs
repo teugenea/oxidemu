@@ -4,7 +4,7 @@ use common::bus::{Writable, Readable};
 use common::bus::DeviceType;
 use common::memory::Memory;
 use common::cpu::Cpu;
-use common::video::VideoMemory;
+use common::video::{ VideoMemory, VideoOut };
 use rand::Rng;
 use rand::thread_rng;
 
@@ -34,7 +34,7 @@ const FONT_SET: [u8; 80] = [
 ];
 
 
-struct Chip8 {
+pub struct Chip8 {
     memory: Memory,
     video_memory: VideoMemory,
     registers: Vec<u8>,
@@ -182,6 +182,19 @@ impl Cpu for Chip8 {
     }
 
 }
+
+impl VideoOut for Chip8 { 
+    
+    fn get_video_buf_32(&self) -> &Vec<u32> {
+        self.video_memory.get_video_buf_32()
+    }
+
+    fn get_video_buf_8(&self) -> Vec<u8> {
+        self.video_memory.get_video_buf_8()
+    }
+}
+
+impl common::Emulator for Chip8 { }
 
 #[cfg(test)]
 mod Chip8Tests {

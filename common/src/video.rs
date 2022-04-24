@@ -7,8 +7,8 @@ pub struct VideoMemory {
 }
 
 pub trait VideoOut {
-    fn set(&mut self, addr: usize, value: u32);
-    fn get(&self) -> &Vec<u32>;
+    fn get_video_buf_32(&self) -> &Vec<u32>;
+    fn get_video_buf_8(&self) -> Vec<u8>;
 }
 
 impl VideoMemory {
@@ -26,6 +26,14 @@ impl VideoMemory {
 }
 
 impl VideoOut for VideoMemory {
-    fn get(&self) -> &Vec<u32> { &self.memory }
-    fn set(&mut self, addr: usize, value: u32) { self.memory[addr] = value; }
+    fn get_video_buf_32(&self) -> &Vec<u32> { &self.memory }
+
+    fn get_video_buf_8(&self) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::with_capacity(4 * self.memory.len());
+        for value in &self.memory {
+            out.extend(&value.to_be_bytes());
+        }
+
+        out
+    }
 }
