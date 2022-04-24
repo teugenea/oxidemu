@@ -88,14 +88,17 @@ impl Chip8 {
 
     fn get_rand() -> u8 { thread_rng().gen_range(0..256) as u8}
 
-    fn exec_intruction(&mut self, opcode: &u16) {
-        match Chip8::decode(opcode) {
+    fn exec_intruction(&mut self) {
+        match Chip8::decode(&self.opcode) {
             0x0000 => self.op_00e0(),
             0x000E => self.op_00ee(),
             0x1000 => self.op_1nnn(),
             0x2000 => self.op_2nnn(),
             0x3000 => self.op_3xkk(),
             0x4000 => self.op_4xkk(),
+            0x5000 => self.op_5xy0(),
+            0x6000 => self.op_6xkk(),
+            0x7000 => self.op_7xkk(),
             y => {
                 panic!("Cannot decode instruction {}", y);
             }
@@ -143,7 +146,7 @@ impl Chip8 {
         }
     }
 
-    //
+    //SE vx, vy - skip if registers equals
     fn op_5xy0(&mut self) {
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x00F0) >> 4;
@@ -152,6 +155,19 @@ impl Chip8 {
         }
     }
 
+    //LD Vx, byte - set register
+    fn op_6xkk(&mut self) {
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let byte = self.opcode & 0x00FF;
+        self.registers[vx as usize] = byte as u8;
+    }
+
+    //ADD vx, byte
+    fn op_7xkk(&mut self) {
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let byte = self.opcode & 0x00FF;
+        self.registers[vx as usize] = byte as u8;
+    }
 }
 
 impl Cpu for Chip8 {
@@ -160,7 +176,7 @@ impl Cpu for Chip8 {
         let opcode = self.memory.read_word(self.pc as usize).expect("Cannot read from memory");
         self.pc += 2;
         self.opcode = opcode;
-        self.exec_intruction(&opcode);
+        self.exec_intruction();
         if self.delay_timer > 0 { self.delay_timer -= 1 }
         if self.sound_timer > 0 { self.sound_timer -= 1 }
     }
@@ -173,8 +189,17 @@ mod Chip8Tests {
     use super::*;
 
     #[test]
-    fn test_op_4xkk() {
+    fn test_op_5xy0() {
         let mut c8 = Chip8::new();
-        c8.op_5xy0()
+        let start_addr = START_ADDRESS as u16;
+        c8.registers[1] = 2;
+        c8.registers[2] = 5;
+        c8.opcode = 0x5120;
+        c8.exec_intruction();
+        assert_eq!(c8.pc, start_addr);
+
+        c8.registers[1] = 5;
+        c8.exec_intruction();
+        assert_eq!(c8.pc, start_addr + 2);
     }
 }
