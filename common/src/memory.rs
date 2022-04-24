@@ -13,7 +13,6 @@ impl Memory {
             memory: vec![0u8; size]
         }
     }
-
 }
 
 impl Debuggable for Memory {
@@ -28,6 +27,18 @@ impl Readable for Memory {
         }
         Ok(self.memory[addr])
     }
+
+    fn read_word(&self, addr: usize) -> Result<u16, EmulError> {
+        if self.size < addr || self.size < addr + 1 {
+            let msg = format!("Cannot read from {0}", self.get_name());
+            return Err(EmulError::new(EmulErrorKind::OutOfBounds, msg))
+        }
+        let first_byte = self.memory[addr] as u16;
+        let second_byte = self.memory[addr + 1] as u16;
+        let mut word: u16 = first_byte << 8;
+        word = word | second_byte;
+        Ok(word)
+    }
 }
 
 impl Writable for Memory {
@@ -38,25 +49,6 @@ impl Writable for Memory {
             return Err(EmulError::new(EmulErrorKind::OutOfBounds, msg));
         }
         Ok(self.memory[addr] = value)
-    }
-
-    fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError> {
-        let block_end = start_addr + data.len();
-        if block_end > self.size {
-            let msg = format!("Cannot write BLOCK to {0} because it overflows memory. ",
-                self.get_name());
-            return Err(EmulError::new(EmulErrorKind::OutOfBounds, msg));
-        }
-        let mut i = start_addr;
-        for byte in data {
-            let res = self.write_byte(i, byte);
-            i += 1;
-            match res {
-                Err(err) => return Err(err),
-                _ => {}
-            }
-        }
-        Ok(())
     }
 }
 

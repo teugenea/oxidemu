@@ -39,6 +39,7 @@ fn read_and_write() {
     }
 }
 
+/*
 #[test]
 fn write_block_out_of_bounds() {
     let mut memory = Memory::new(100);
@@ -62,3 +63,4 @@ fn read_and_write_block() {
         Err(err) => panic!("Cannot write: {}", err)
     }
 }
+*/

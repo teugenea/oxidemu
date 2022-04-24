@@ -8,14 +8,12 @@ use std::fmt::Display;
 #[repr(u8)]
 pub enum DeviceType {
     Memory,
-    VideoMemory,
 }
 
 impl DeviceType {
     fn to_string(&self) -> &'static str {
         match self {
-            DeviceType::Memory => "Memory",
-            DeviceType::VideoMemory => "VideoMemory"
+            DeviceType::Memory => "Memory"
         }
     }
 }
@@ -38,11 +36,11 @@ pub trait Debuggable {
 
 pub trait Readable : Debuggable {
     fn read_byte(&self, addr: usize) -> Result<u8, EmulError>;
+    fn read_word(&self, addr: usize) -> Result<u16, EmulError>;
 }
 
 pub trait Writable : Debuggable {
     fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), EmulError>;
-    fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError>;
 }
 
 pub trait Rw : Readable + Writable { }
@@ -80,9 +78,7 @@ impl Bus {
     }
 
     pub fn write(&mut self, d_type: DeviceType, addr: usize, value: u8) -> Result<(), EmulError> {
-        print!("*** get dev to write\n");
         let device = self.devs.get_mut(&d_type);
-        print!("*** write\n");
         match device {
             Some(b) => b.write_byte(addr, value),
             _ => {

@@ -1,9 +1,9 @@
 use std::io::{BufReader, Read};
 use std::fs::File;
 
-pub fn load_rom(file_name: &str) -> Vec<u8> {
+pub fn load_rom(file_name: &str, start_addr: usize, target: &mut Vec<u8>) {
     let mut input = BufReader::new(File::open(file_name).expect("Cannot open file file_name"));
-    let mut bytes = Vec::new();
+    let mut i = start_addr;
     loop {
         use std::io::ErrorKind;
         let mut buffer = [0u8; std::mem::size_of::<u8>()];
@@ -13,7 +13,7 @@ pub fn load_rom(file_name: &str) -> Vec<u8> {
             _ => {}
         }
         res.expect("error during read");
-        bytes.push(u8::from_le_bytes(buffer));
+        target[i] = u8::from_le_bytes(buffer);
+        i += 1;
     }
-    bytes
 }

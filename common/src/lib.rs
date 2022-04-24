@@ -1,4 +1,5 @@
 pub mod memory;
+pub mod video;
 pub mod bus;
 pub mod cpu;
 pub mod utils;
