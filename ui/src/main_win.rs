@@ -2,13 +2,39 @@ use std::mem;
 use eframe::{egui, epi, egui::Frame};
 use egui::ColorImage;
 
-use sdl2::surface::Surface;
-use sdl2::render::{Canvas, TextureAccess};
+use sdl2::surface::{Surface, SurfaceContext};
+use sdl2::render::{Canvas, TextureAccess, TextureCreator, Texture};
 use sdl2::pixels::{PixelFormatEnum, Color};
 use sdl2::rect::{Point, Rect};
 
 use common::{ Emulator, video::VideoOut, cpu::Cpu };
 use chip8::chip8::Chip8;
+
+struct SdlRender<'a> {
+    // surface: Surface<'a>,
+    canvas: Canvas<Surface<'a>>,
+    // texture_creator: TextureCreator<SurfaceContext<'a>>,
+    // texture: Texture<'a>,
+}
+
+impl<'a> SdlRender<'a> {
+    pub fn new(size: [u32; 2], scale: u32) -> Self {
+        if (scale > 10) {
+            panic!("Scale is too big");
+        }
+        let x = size[0];
+        let y = size[1];
+        let surface = Surface::new(x * scale, y * scale, 
+            PixelFormatEnum::RGBA8888).expect("Cannot create SDL2 surface");
+        let canvas = Canvas::from_surface(surface).expect("Cannot create SDL2 canvas");
+        let texture_creator = canvas.texture_creator();
+        let mut texture = texture_creator.create_texture(PixelFormatEnum::RGBA8888, 
+            TextureAccess::Streaming, 64, 32).expect("Cannot crate texture");
+        Self {
+            canvas: canvas
+        }
+    }
+}
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
