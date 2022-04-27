@@ -33,7 +33,7 @@ impl VideoOut for VideoMemory {
         for value in &self.memory {
             out.extend(&value.to_be_bytes());
         }
-
+        out[64] = 255; out[65] = 255; out[66] = 100; out[67] = 200; //TODO delete
         out
     }
 }

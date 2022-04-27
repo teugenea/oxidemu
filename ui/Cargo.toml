@@ -9,10 +9,14 @@ egui = "0.17.0"
 egui_glow = "0.17.0"
 glow = "0.11"
 epaint = "0.17.0"
-sdl2 = "0.35.2"
 common = { path = "../common" }
 chip8 = { path = "../chip8" }
 
 [features]
 default = []
 persistence = ["eframe/persistence"]
+
+[dependencies.sdl2]
+features = ["unsafe_textures"]
+version = "0.35.2"
+default-features = false

@@ -11,66 +11,71 @@ use common::{ Emulator, video::VideoOut, cpu::Cpu };
 use chip8::chip8::Chip8;
 
 struct SdlRender<'a> {
-    // surface: Surface<'a>,
     canvas: Canvas<Surface<'a>>,
-    // texture_creator: TextureCreator<SurfaceContext<'a>>,
-    // texture: Texture<'a>,
+    texture: Texture,
+    size: [u32; 2],
+    scaled_size: [u32; 2]
 }
 
 impl<'a> SdlRender<'a> {
     pub fn new(size: [u32; 2], scale: u32) -> Self {
-        if (scale > 10) {
+        if scale > 10 {
             panic!("Scale is too big");
         }
-        let x = size[0];
-        let y = size[1];
-        let surface = Surface::new(x * scale, y * scale, 
+        let scaled_size = [size[0] * scale, size[1] * scale];
+        let surface = Surface::new(scaled_size[0], scaled_size[1], 
             PixelFormatEnum::RGBA8888).expect("Cannot create SDL2 surface");
         let canvas = Canvas::from_surface(surface).expect("Cannot create SDL2 canvas");
         let texture_creator = canvas.texture_creator();
-        let mut texture = texture_creator.create_texture(PixelFormatEnum::RGBA8888, 
-            TextureAccess::Streaming, 64, 32).expect("Cannot crate texture");
+        let texture = texture_creator.create_texture(PixelFormatEnum::RGBA8888, 
+            TextureAccess::Streaming, size[0], size[1]).expect("Cannot create SDL2 texture");
         Self {
-            canvas: canvas
+            canvas: canvas,
+            texture: texture,
+            size: size,
+            scaled_size: scaled_size,
         }
     }
 }
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
-pub struct OxidemuApp {
+pub struct OxidemuApp<'a> {
     texture: Option<egui::TextureHandle>,
-    em: Chip8
+    em: Chip8,
+    sdl_render: SdlRender<'a>,
 }
 
-impl OxidemuApp {
-    fn render(&self, pixels: Vec<u8>) -> Vec<u8> {
-        let surf = Surface::new(1024, 768, PixelFormatEnum::RGBA8888)
-            .expect("Cannot create SDL2 surface");
-        let mut canvas = Canvas::from_surface(surf).expect("Cannot create SDL2 caanvas");
-        let texture_creator = canvas.texture_creator();
-        let mut texture = texture_creator.create_texture(PixelFormatEnum::RGBA8888, 
-            TextureAccess::Streaming, 64, 32).expect("Cannot crate texture");
-        
-        texture.update(None, &pixels, mem::size_of::<u32>() * 64);
-        canvas.clear();
-        canvas.copy(&texture, None, None);
-        canvas.present();
-        let pixels = canvas.read_pixels(None, PixelFormatEnum::RGBA8888).expect("Cannot read pixels");
-        pixels
+impl<'a> OxidemuApp<'a> {
+    fn render(&mut self, pixels: Vec<u8>) -> Vec<u8> {      
+        let update_result = self.sdl_render.texture.update(None, &pixels, 
+            mem::size_of::<u32>() * self.sdl_render.size[0] as usize);
+        match update_result {
+            Err(e) => panic!("Cannot update SDL2 texture: {}", e),
+            _ => {}
+        }
+        self.sdl_render.canvas.clear();
+        let copy_result = self.sdl_render.canvas.copy(&self.sdl_render.texture, None, None);
+        match copy_result {
+            Err(e) => panic!("Cannot copy SDL2 texture: {}", e),
+            _ => {}
+        }
+        self.sdl_render.canvas.present();
+        self.sdl_render.canvas.read_pixels(None, PixelFormatEnum::RGBA8888).expect("Cannot read pixels")
     }
 }
 
-impl Default for OxidemuApp {
+impl<'a> Default for OxidemuApp<'a> {
     fn default() -> Self {
         Self {
             texture: None,
-            em: Chip8::new()
+            em: Chip8::new(),
+            sdl_render: SdlRender::new([64, 32], 10),
         }
     }
 }
 
-impl epi::App for OxidemuApp {
+impl<'a> epi::App for OxidemuApp<'a> {
     
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -91,7 +96,8 @@ impl epi::App for OxidemuApp {
                 .rounding(eframe::egui::Rounding::none())
                 .margin(egui::style::Margin::same(0.0));
             cnv.show(ui, |ui| {
-                let img = ColorImage::from_rgba_unmultiplied([1024, 768], 
+                let img = ColorImage::from_rgba_unmultiplied(
+                    [self.sdl_render.scaled_size[0] as usize, self.sdl_render.scaled_size[1] as usize], 
                     &self.render(self.em.get_video_buf_8()));
                 let texture: &egui::TextureHandle = self.texture.get_or_insert_with(|| {
                     ui.ctx().load_texture("render_image", img)
