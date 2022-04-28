@@ -1,4 +1,5 @@
 mod main_win;
+mod render;
 
 pub fn create_main_winow() {
     let app = main_win::OxidemuApp::default();
