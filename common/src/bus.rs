@@ -41,6 +41,7 @@ pub trait Readable : Debuggable {
 
 pub trait Writable : Debuggable {
     fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), EmulError>;
+    fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError>;
 }
 
 pub trait Rw : Readable + Writable { }

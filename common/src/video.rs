@@ -1,4 +1,3 @@
-use crate::bus::{ Readable, Writable, Rw };
 
 pub struct VideoMemory {
     memory: Vec<u32>,
@@ -39,9 +38,8 @@ impl VideoOut for VideoMemory {
     fn get_video_buf_8(&self) -> Vec<u8> {
         let mut out: Vec<u8> = Vec::with_capacity(4 * self.memory.len());
         for value in &self.memory {
-            out.extend(&value.to_be_bytes());
+            out.extend(value.to_be_bytes());
         }
-        out[64] = 255; out[65] = 255; out[66] = 100; out[67] = 200; //TODO delete
         out
     }
 }

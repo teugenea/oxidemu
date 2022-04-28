@@ -4,6 +4,7 @@ use std::fmt::Display;
 pub enum EmulErrorKind {
     OutOfBounds,
     DeviceNotFound,
+    RomFileNotFound,
 }
 
 #[derive(Debug)]
@@ -26,6 +27,7 @@ impl EmulErrorKind {
         match self {
             EmulErrorKind::DeviceNotFound => "DeviceNotFound",
             EmulErrorKind::OutOfBounds => "OutOfBounds",
+            EmulErrorKind::RomFileNotFound => "RomFileNotFound",
         }
     }
 }

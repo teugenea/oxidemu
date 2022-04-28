@@ -4,6 +4,7 @@ use common::bus::{Writable, Readable};
 use common::memory::Memory;
 use common::cpu::Cpu;
 use common::video::{ VideoMemory, VideoOut };
+use common::utils;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
@@ -13,7 +14,7 @@ const MEMORY_SIZE: usize = 4096;
 const REGISTERS_COUNT: usize = 16;
 const START_ADDRESS: usize = 0x200;
 const STACK_LEVELS: usize = 16;
-const COLOR: u32 = 0x66CC33;
+const COLOR: u32 = 0x00FF00FF;
 const KEY_COUNT: usize = 16;
 
 const FONTSET_START_ADDRESS: usize = 0x50;
@@ -69,8 +70,8 @@ impl Chip8 {
             sound_timer: 0,
             keypad: vec![0u8; KEY_COUNT],
             last_cycle_time: Chip8::get_time(),
-            cycle_delay: 10,
-            active: false,
+            cycle_delay: 50,
+            active: true,
         }
     }
 
@@ -106,7 +107,15 @@ impl Chip8 {
         self.exec_intruction();
         if self.delay_timer > 0 { self.delay_timer -= 1 }
         if self.sound_timer > 0 { self.sound_timer -= 1 }
-        
+    }
+
+    pub fn load_rom(&mut self, file_name: String) {
+        match utils::load_rom(&file_name) {
+            Err(error) => panic!("Cannot load rom {}", error),
+            Ok(result) => {
+                self.memory.write_block(START_ADDRESS, result).expect("Cannot write ROM to memory")
+            }
+        }
     }
 
     fn exec_intruction(&mut self) {
