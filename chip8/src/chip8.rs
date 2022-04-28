@@ -12,6 +12,8 @@ const MEMORY_SIZE: usize = 4096;
 const REGISTERS_COUNT: usize = 16;
 const START_ADDRESS: usize = 0x200;
 const STACK_LEVELS: usize = 16;
+const COLOR: u32 = 0x66CC33;
+const KEY_COUNT: usize = 16;
 
 const FONTSET_START_ADDRESS: usize = 0x50;
 const FONT_SET: [u8; 80] = [
@@ -44,7 +46,8 @@ pub struct Chip8 {
     index: u16,
     opcode: u16,
     delay_timer: u8,
-    sound_timer: u8
+    sound_timer: u8,
+    keypad: Vec<u8>,
 }
 
 impl Chip8 {
@@ -59,7 +62,8 @@ impl Chip8 {
             index: 0,
             opcode: 0,
             delay_timer: 0,
-            sound_timer: 0
+            sound_timer: 0,
+            keypad: vec![0u8; KEY_COUNT],
         }
     }
 
@@ -99,6 +103,31 @@ impl Chip8 {
             0x5000 => self.op_5xy0(),
             0x6000 => self.op_6xkk(),
             0x7000 => self.op_7xkk(),
+            0x8000 => self.op_8xy0(),
+            0x8001 => self.op_8xy1(),
+            0x8002 => self.op_8xy2(),
+            0x8003 => self.op_8xy3(),
+            0x8004 => self.op_8xy4(),
+            0x8005 => self.op_8xy5(),
+            0x8006 => self.op_8xy6(),
+            0x8007 => self.op_8xy7(),
+            0x800E => self.op_8xyE(),
+            0x9000 => self.op_9xy0(),
+            0xA000 => self.op_Annn(),
+            0xB000 => self.op_Bnnn(),
+            0xC000 => self.op_Cxkk(),
+            0xD000 => self.op_Dxyn(),
+            0xE00E => self.op_Ex9E(),
+            0xE001 => self.op_ExA1(),
+            0xF007 => self.op_Fx07(),
+            0xF015 => self.op_Fx15(),
+            0xF018 => self.op_Fx18(),
+            0xF029 => self.op_Fx29(),
+            0xF033 => self.op_Fx33(),
+            0xF055 => self.op_Fx55(),
+            0xF065 => self.op_Fx65(),
+            0xF00A => self.op_Fx0A(),
+            0xF01E => self.op_Fx1E(),
             y => {
                 panic!("Cannot decode instruction {}", y);
             }
@@ -168,6 +197,231 @@ impl Chip8 {
         let byte = self.opcode & 0x00FF;
         self.registers[vx as usize] = byte as u8;
     }
+
+    //LD Vx, Vy
+    fn op_8xy0(&mut self) {
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let vy = (self.opcode & 0x00F0) >> 4;
+        self.registers[vx as usize] = self.registers[vy as usize];
+    }
+
+    //OR Vx, Vy
+    fn op_8xy1(&mut self) {
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let vy = (self.opcode & 0x00F0) >> 4;
+        self.registers[vx as usize] |= self.registers[vy as usize];
+    }
+
+    //AND Vx, Vy
+    fn op_8xy2(&mut self) {
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let vy = (self.opcode & 0x00F0) >> 4;
+        self.registers[vx as usize] &= self.registers[vy as usize];
+    }
+
+    //XOR Vx, Vy
+    fn op_8xy3(&mut self) {
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let vy = (self.opcode & 0x00F0) >> 4;
+        self.registers[vx as usize] ^= self.registers[vy as usize];
+    }
+
+    //ADD Vx, Vy
+    fn op_8xy4(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
+        let sum = self.registers[vx] as u16 + self.registers[vy] as u16;
+        if sum > 255 {
+            self.registers[0xF] = 1;
+        } else {
+            self.registers[0xF] = 0;
+        }
+        self.registers[vx] = sum as u8 & 0xFF;
+    }
+
+    //SUB Vx, Vy
+    fn op_8xy5(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
+        if self.registers[vx] > self.registers[vy] {
+            self.registers[0xF] = 1;
+        } else {
+            self.registers[0xF] = 0;
+        }
+        self.registers[vx] -= self.registers[vy];
+    }
+
+    //SHR Vx
+    fn op_8xy6(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.registers[0xF] = self.registers[vx] & 0x1;
+        self.registers[vx] >>= 1;
+    }
+
+    //SUBN Vx, Vy
+    fn op_8xy7(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
+        if self.registers[vx] < self.registers[vy] {
+            self.registers[0xF] = 1;
+        } else {
+            self.registers[0xF] = 0;
+        }
+        self.registers[vx] = self.registers[vy] - self.registers[vx];
+    }
+
+    // SHL Vx {, Vy}
+    fn op_8xyE(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.registers[0xF] = (self.registers[vx] & 0x80) >> 7;
+        self.registers[vx] <<= 1;
+    }
+
+    //SNE Vx, Vy - skip if not eq
+    fn op_9xy0(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
+        if self.registers[vx] != self.registers[vy] {
+            self.pc += 2;
+        }
+    }
+
+    //LD I, addr. Set I = nnn
+    fn op_Annn(&mut self) {
+        let address = self.opcode & 0x0FFF;
+        self.index = address;
+    }
+
+    //Bnnn - JP V0, addr. Jump nnn + V0
+    fn op_Bnnn(&mut self) {
+        let address = self.opcode & 0x0FFF;
+        self.pc = self.registers[0] as u16 + address;
+    }
+
+    //RND Vx, byte. Set Vx = random byte AND kk.
+    fn op_Cxkk(&mut self) {
+        let vx = ((self.opcode & 0xF00) >> 8) as usize;
+        let byte = (self.opcode & 0x00FF) as u8;
+        self.registers[vx] = Chip8::get_rand() & byte;
+    }
+
+    //Dxyn - DRW Vx, Vy, nibble
+    fn op_Dxyn(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
+        let height = self.opcode & 0x000F;
+
+        let x_pos = self.registers[vx] % self.video_memory.wight as u8;
+        let y_pos = self.registers[vy] % self.video_memory.height as u8;
+        self.registers[0xF] = 0;
+        for row in 0..height {
+            let sprite_byte = self.memory.read_byte((self.index + row) as usize)
+                .expect("Cannot read");
+            for col in 0..8 {
+                let sprite_pixel = sprite_byte & (0x80 >> col);
+                let addr = (y_pos as usize + row as usize) * self.video_memory.wight +
+                    (x_pos as usize + col as usize);
+                let screen_pixel = self.video_memory.read_pixel(addr);
+                if sprite_pixel != 0 {
+                    if screen_pixel == COLOR {
+                        self.registers[0xF] = 1;
+                    }
+                    self.video_memory.write_pixel(addr, screen_pixel ^ COLOR);
+                }
+            }
+        }
+    }
+
+    //Ex9E - SKP Vx. Skip next instruction if key with the value of Vx is pressed
+    fn op_Ex9E(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let key = self.registers[vx];
+        if self.keypad[key as usize] != 0 {
+            self.pc += 2;
+        }
+    }
+
+    //ExA1 - SKNP Vx. Skip next instruction if key with the value of Vx is not pressed
+    fn op_ExA1(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let key = self.registers[vx];
+        if self.keypad[key as usize] == 0 {
+            self.pc += 2;
+        }
+    }
+
+    //Fx07 - LD Vx, DT. Set Vx = delay timer value
+    fn op_Fx07(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.registers[vx] = self.delay_timer;
+    }
+
+    //Fx0A - LD Vx, K. Wait for a key press, store the value of the key in Vx
+    fn op_Fx0A(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        for key_number in 0..KEY_COUNT {
+            if self.keypad[key_number] != 0 {
+                self.registers[vx] = key_number as u8;
+                break;
+            } else {
+                self.pc -= 2;
+            }
+        }
+    }
+
+    //Fx15 - LD DT, Vx. Set delay timer = Vx
+    fn op_Fx15(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.delay_timer = self.registers[vx];
+    }
+
+    //Fx18 - LD ST, Vx. Set sound timer = Vx
+    fn op_Fx18(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.sound_timer = self.registers[vx];
+    }
+
+    //Fx1E - ADD I, Vx. Set I = I + Vx
+    fn op_Fx1E(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.index += self.registers[vx] as u16;
+    }
+
+    //Fx29 - LD F, Vx. Set I = location of sprite for digit Vx
+    fn op_Fx29(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let digit = self.registers[vx];
+        self.index = FONTSET_START_ADDRESS as u16 + 5 * digit as u16;
+    }
+
+    //Fx33 - LD B, Vx. Store BCD representation of Vx in memory locations I, I+1, and I+2
+    fn op_Fx33(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let mut value = self.registers[vx];
+        let addr = self.index as usize;
+        self.memory.write_byte(addr + 2, value % 10).expect("");
+        value /= 10;
+        self.memory.write_byte(addr + 1, value % 10).expect("");
+        value /= 10;
+        self.memory.write_byte(addr, value % 10).expect("");
+    }
+
+    //Fx55 - LD [I], Vx. Store registers V0 through Vx in memory starting at location I
+    fn op_Fx55(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        for i in 0..vx+1 {
+            let addr = self.index as usize + i;
+            self.memory.write_byte(addr, self.registers[i]).expect("");
+        }
+    }
+
+    //Fx65 - LD Vx, [I]. Read registers V0 through Vx from memory starting at location I
+    fn op_Fx65(&mut self) {
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        for i in 0..vx+1 {
+            self.registers[i] = self.memory.read_byte(self.index as usize + i).expect("");
+        }
+    }
 }
 
 impl Cpu for Chip8 {
@@ -214,5 +468,11 @@ mod Chip8Tests {
         c8.registers[1] = 5;
         c8.exec_intruction();
         assert_eq!(c8.pc, start_addr + 2);
+    }
+
+    #[test]
+    fn test_op_8xy4() {
+        let mut c8 = Chip8::new();
+        
     }
 }

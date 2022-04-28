@@ -23,6 +23,14 @@ impl VideoMemory {
     pub fn clear(&mut self) {
         self.memory.fill(0)
     }
+
+    pub fn read_pixel(&self, address: usize) -> u32 {
+        self.memory[address]
+    }
+
+    pub fn write_pixel(&mut self, address: usize, pixel: u32) {
+        self.memory[address] = pixel;
+    }
 }
 
 impl VideoOut for VideoMemory {

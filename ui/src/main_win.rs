@@ -1,10 +1,9 @@
-use std::mem;
 use eframe::{egui, epi, egui::Frame};
 use egui::ColorImage;
 
 use crate::render::SdlRender;
 
-use common::{ Emulator, video::VideoOut, cpu::Cpu };
+use common::{ video::VideoOut };
 use chip8::chip8::Chip8;
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
