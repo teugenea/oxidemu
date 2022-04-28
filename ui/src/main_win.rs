@@ -2,6 +2,7 @@ use eframe::{egui, epi, egui::Frame};
 use egui::ColorImage;
 
 use crate::render::SdlRender;
+use common::cpu::Cpu;
 
 use common::{ video::VideoOut };
 use chip8::chip8::Chip8;
@@ -49,6 +50,7 @@ impl<'a> epi::App for OxidemuApp<'a> {
                 .rounding(eframe::egui::Rounding::none())
                 .margin(egui::style::Margin::same(0.0));
             cnv.show(ui, |ui| {
+                self.em.cycle();
                 let img = ColorImage::from_rgba_unmultiplied(
                     [self.sdl_render.scaled_size[0] as usize, self.sdl_render.scaled_size[1] as usize], 
                     &self.sdl_render.get_pixels(self.em.get_video_buf_8())

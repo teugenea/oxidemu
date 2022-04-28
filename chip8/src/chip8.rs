@@ -1,10 +1,11 @@
 extern crate common;
 
 use common::bus::{Writable, Readable};
-use common::bus::DeviceType;
 use common::memory::Memory;
 use common::cpu::Cpu;
 use common::video::{ VideoMemory, VideoOut };
+
+use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
 use rand::thread_rng;
 
@@ -48,6 +49,9 @@ pub struct Chip8 {
     delay_timer: u8,
     sound_timer: u8,
     keypad: Vec<u8>,
+    last_cycle_time: u128,
+    cycle_delay: u128,
+    active: bool,
 }
 
 impl Chip8 {
@@ -64,6 +68,9 @@ impl Chip8 {
             delay_timer: 0,
             sound_timer: 0,
             keypad: vec![0u8; KEY_COUNT],
+            last_cycle_time: Chip8::get_time(),
+            cycle_delay: 10,
+            active: false,
         }
     }
 
@@ -91,6 +98,16 @@ impl Chip8 {
     }
 
     fn get_rand() -> u8 { thread_rng().gen_range(0..256) as u8}
+
+    fn do_cycle(&mut self) {
+        let opcode = self.memory.read_word(self.pc as usize).expect("Cannot read from memory");
+        self.pc += 2;
+        self.opcode = opcode;
+        self.exec_intruction();
+        if self.delay_timer > 0 { self.delay_timer -= 1 }
+        if self.sound_timer > 0 { self.sound_timer -= 1 }
+        
+    }
 
     fn exec_intruction(&mut self) {
         match Chip8::decode(&self.opcode) {
@@ -132,6 +149,10 @@ impl Chip8 {
                 panic!("Cannot decode instruction {}", y);
             }
         }
+    }
+
+    fn get_time() -> u128 {
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("Cannot get time").as_millis()
     }
 
     //CLS
@@ -427,12 +448,11 @@ impl Chip8 {
 impl Cpu for Chip8 {
     
     fn cycle(&mut self) {
-        let opcode = self.memory.read_word(self.pc as usize).expect("Cannot read from memory");
-        self.pc += 2;
-        self.opcode = opcode;
-        self.exec_intruction();
-        if self.delay_timer > 0 { self.delay_timer -= 1 }
-        if self.sound_timer > 0 { self.sound_timer -= 1 }
+        let time = Chip8::get_time();
+        if self.active && self.last_cycle_time + self.cycle_delay <= time {
+            self.do_cycle();
+            self.last_cycle_time = time;
+        }
     }
 
 }
