@@ -9,6 +9,7 @@ egui = "0.17.0"
 egui_glow = "0.17.0"
 glow = "0.11"
 epaint = "0.17.0"
+gilrs = "0.8.1"
 common = { path = "../common" }
 chip8 = { path = "../chip8" }
 

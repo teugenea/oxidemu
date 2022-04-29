@@ -1,10 +1,11 @@
+use gilrs::{Gilrs, Button, Event};
+
 use eframe::{egui, egui::Frame, epi};
 use egui::ColorImage;
 use egui::Key;
 
 use crate::render::SdlRender;
 use common::cpu::Cpu;
-
 use chip8::chip8::Chip8;
 use common::video::VideoOut;
 
@@ -13,7 +14,7 @@ use common::video::VideoOut;
 pub struct OxidemuApp<'a> {
     em: Chip8,
     sdl_render: SdlRender<'a>,
-
+    gilrs: Gilrs,
 }
 
 impl<'a> OxidemuApp<'a> {
@@ -28,12 +29,13 @@ impl<'a> Default for OxidemuApp<'a> {
     fn default() -> Self {
         let mut chip = Chip8::new();
         chip.load_rom(String::from(
-            "D:\\Projects\\rusty-emul\\chip8-roms\\demos\\Stars [Sergey Naydenov, 2010].ch8",
+            "D:\\Projects\\rusty-emul\\chip8-roms\\demos\\Particle Demo [zeroZshadow, 2008].ch8",
         ));
 
         Self {
             em: chip,
             sdl_render: SdlRender::new([64, 32], 10),
+            gilrs: Gilrs::new().unwrap(),
         }
     }
 }
@@ -77,7 +79,11 @@ impl<'a> epi::App for OxidemuApp<'a> {
                     ui.image(tt, tt.size_vec2());
                     ui.ctx().request_repaint();
 
-                    self.handle_input(ui);
+                    //self.handle_input(ui);
+                    
+                    if let Some(event) = self.gilrs.next_event() {
+                        println!("{:?}", event);
+                    }
                 });
             });
     }
