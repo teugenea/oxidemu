@@ -71,7 +71,7 @@ impl Chip8 {
             keypad: vec![0u8; KEY_COUNT],
             last_cycle_time: Chip8::get_time(),
             cycle_delay: 50,
-            active: true,
+            active: false,
         }
     }
 
@@ -111,9 +111,13 @@ impl Chip8 {
 
     pub fn load_rom(&mut self, file_name: String) {
         match utils::load_rom(&file_name) {
-            Err(error) => panic!("Cannot load rom {}", error),
+            Err(error) => print!("Cannot load rom {}", error),
             Ok(result) => {
-                self.memory.write_block(START_ADDRESS, result).expect("Cannot write ROM to memory")
+                let load_res = self.memory.write_block(START_ADDRESS, result);
+                match load_res {
+                    Err(error) => print!("Cannot write to memory. {}", error),
+                    _ => self.active = true
+                }
             }
         }
     }
