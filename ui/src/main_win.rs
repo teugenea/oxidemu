@@ -1,6 +1,6 @@
 use gilrs::{Gilrs, Button, Event};
 
-use eframe::{egui, egui::Frame, epi};
+use eframe::{egui, egui::Frame};
 use egui::ColorImage;
 use egui::Key;
 
@@ -40,8 +40,9 @@ impl<'a> Default for OxidemuApp<'a> {
     }
 }
 
-impl<'a> epi::App for OxidemuApp<'a> {
-    fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+impl<'a> eframe::App for OxidemuApp<'a> {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        ctx.set_visuals(egui::Visuals::dark());
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -52,7 +53,7 @@ impl<'a> epi::App for OxidemuApp<'a> {
             });
         });
         let central_frame = Frame {
-            margin: egui::style::Margin::same(0.0),
+            inner_margin: egui::style::Margin::same(0.0),
             ..Default::default()
         };
         egui::CentralPanel::default()
@@ -86,9 +87,5 @@ impl<'a> epi::App for OxidemuApp<'a> {
                     }
                 });
             });
-    }
-
-    fn name(&self) -> &str {
-        "Oxidemu"
     }
 }

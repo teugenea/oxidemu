@@ -3,6 +3,10 @@ mod render;
 
 pub fn create_main_winow() {
     let app = main_win::OxidemuApp::default();
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(Box::new(app), native_options);
+    let options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "Show an image with eframe/egui",
+        options,
+        Box::new(|_cc| Box::new(main_win::OxidemuApp::default()))
+    );
 }
