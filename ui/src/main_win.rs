@@ -29,7 +29,7 @@ impl<'a> Default for OxidemuApp<'a> {
     fn default() -> Self {
         let mut chip = Chip8::new();
         chip.load_rom(String::from(
-            "D:\\Projects\\rusty-emul\\chip8-roms\\demos\\Particle Demo [zeroZshadow, 2008].ch8",
+            "D:\\Projects\\rusty-emul\\chip8-roms\\demos\\Stars [Sergey Naydenov, 2010].ch8",
         ));
 
         Self {

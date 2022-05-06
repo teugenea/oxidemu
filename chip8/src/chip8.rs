@@ -277,12 +277,14 @@ impl Chip8 {
     fn op_8xy5(&mut self) {
         let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         let vy = ((self.opcode & 0x00F0) >> 4) as usize;
-        if self.registers[vx] > self.registers[vy] {
+        if self.registers[vx] >= self.registers[vy] {
             self.registers[0xF] = 1;
+            self.registers[vx] -= self.registers[vy];            
         } else {
             self.registers[0xF] = 0;
+            let res = 0xFF - (self.registers[vy] - self.registers[vx] - 1);
+            self.registers[vx] = res;
         }
-        self.registers[vx] -= self.registers[vy];
     }
 
     //SHR Vx
