@@ -1,8 +1,7 @@
-use gilrs::{Gilrs, Button, Event};
+use gilrs::{Gilrs};
 
 use eframe::{egui, egui::Frame};
 use egui::ColorImage;
-use egui::Key;
 
 use crate::render::SdlRender;
 use common::cpu::Cpu;
@@ -18,11 +17,7 @@ pub struct OxidemuApp<'a> {
 }
 
 impl<'a> OxidemuApp<'a> {
-    fn handle_input(&self, ui: &egui::Ui) {
-        if ui.input().key_pressed(Key::Space) {
-            println!("{:?}", ui.input())
-        }
-    }
+    
 }
 
 impl<'a> Default for OxidemuApp<'a> {
@@ -61,7 +56,7 @@ impl<'a> eframe::App for OxidemuApp<'a> {
             .show(ctx, |ui| {
                 let cnv = egui::Frame::dark_canvas(ui.style())
                     .rounding(eframe::egui::Rounding::none())
-                    .margin(egui::style::Margin::same(0.0));
+                    .inner_margin(egui::style::Margin::same(0.0));
                 cnv.show(ui, |ui| {
                     self.em.cycle();
                     let t = self.em.get_video_buf_8();
