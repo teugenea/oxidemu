@@ -210,9 +210,9 @@ dependencies = [
 
 [[package]]
 name = "combine"
-version = "4.6.3"
+version = "4.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50b727aacc797f9fc28e355d21f34709ac4fc9adecfe470ad07b8f4464f53062"
+checksum = "2a604e93b79d1808327a6fca85a6f2d69de66461e7620f5a4cbf5fb4d1d7c948"
 dependencies = [
  "bytes",
  "memchr",
@@ -446,6 +446,7 @@ checksum = "af43ed7ec7199907ab5853c3bb3883ae1e741ab540aa127a798a60b7bdb906f1"
 dependencies = [
  "bytemuck",
  "egui",
+ "egui-winit",
  "glow",
  "memoffset",
  "tracing",
@@ -882,20 +883,7 @@ checksum = "96d868f654c72e75f8687572699cdabe755f03effbb62542768e995d5b8d699d"
 dependencies = [
  "bitflags",
  "jni-sys",
- "ndk-sys 0.2.2",
- "num_enum",
- "thiserror",
-]
-
-[[package]]
-name = "ndk"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2032c77e030ddee34a6787a64166008da93f6a352b629261d0fee232b8742dd4"
-dependencies = [
- "bitflags",
- "jni-sys",
- "ndk-sys 0.3.0",
+ "ndk-sys",
  "num_enum",
  "thiserror",
 ]
@@ -915,25 +903,10 @@ dependencies = [
  "lazy_static",
  "libc",
  "log",
- "ndk 0.5.0",
+ "ndk",
  "ndk-context",
  "ndk-macro",
- "ndk-sys 0.2.2",
-]
-
-[[package]]
-name = "ndk-glue"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d0c4a7b83860226e6b4183edac21851f05d5a51756e97a1144b7f5a6b63e65f"
-dependencies = [
- "lazy_static",
- "libc",
- "log",
- "ndk 0.6.0",
- "ndk-context",
- "ndk-macro",
- "ndk-sys 0.3.0",
+ "ndk-sys",
 ]
 
 [[package]]
@@ -954,15 +927,6 @@ name = "ndk-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1bcdd74c20ad5d95aacd60ef9ba40fdf77f767051040541df557b7a9b2a2121"
-
-[[package]]
-name = "ndk-sys"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e5a6ae77c8ee183dcbbba6150e2e6b9f3f4196a7666c02a715a95692ec1fa97"
-dependencies = [
- "jni-sys",
-]
 
 [[package]]
 name = "nix"
@@ -1348,9 +1312,9 @@ checksum = "ce31e24b01e1e524df96f1c2fdd054405f8d7376249a5110886fb4b658484789"
 
 [[package]]
 name = "serde_derive"
-version = "1.0.136"
+version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08597e7152fcd306f41838ed3e37be9eaeed2b61c42e2117266a554fab4662f9"
+checksum = "1f26faba0c3959972377d3b2d306ee9f71faee9714294e41bb777f83f88578be"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1359,9 +1323,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.79"
+version = "1.0.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e8d9fa5c3b304765ce1fd9c4c8a3de2c8db365a5b91be52f186efc675681d95"
+checksum = "9b7ce2b32a1aed03c558dc61a5cd328f15aff2dbc17daad8fb8af04d2100e15c"
 dependencies = [
  "itoa",
  "ryu",
@@ -1523,9 +1487,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.5.1"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c1c1d5a42b6245520c249549ec267180beaffcc0615401ac8e31853d4b6d8d2"
+checksum = "87cc5ceb3875bb20c2890005a4e226a4651264a5c75edb2421b52861a0a0cb50"
 dependencies = [
  "tinyvec_macros",
 ]
@@ -1592,17 +1556,17 @@ dependencies = [
  "eframe",
  "egui",
  "egui_glow",
- "epaint",
  "gilrs",
  "glow",
+ "glutin",
  "sdl2",
 ]
 
 [[package]]
 name = "unicode-bidi"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a01404663e3db436ed2746d9fefef640d868edae3cceb81c3b8d5732fda678f"
+checksum = "099b7128301d285f79ddd55b9a83d5e6b9e97c92e0ea0daebee7263e932de992"
 
 [[package]]
 name = "unicode-normalization"
@@ -1844,7 +1808,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc6a3cffdb686fbb24d9fb8f03a213803277ed2300f11026a3afe1f108dc021b"
 dependencies = [
  "jni",
- "ndk-glue 0.6.2",
+ "ndk-glue",
  "url",
  "web-sys",
  "widestring",
@@ -1957,9 +1921,9 @@ dependencies = [
  "libc",
  "log",
  "mio",
- "ndk 0.5.0",
- "ndk-glue 0.5.2",
- "ndk-sys 0.2.2",
+ "ndk",
+ "ndk-glue",
+ "ndk-sys",
  "objc",
  "parking_lot 0.11.2",
  "percent-encoding",
