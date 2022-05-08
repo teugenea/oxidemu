@@ -13,16 +13,13 @@ pub struct SdlRender<'a> {
 
 impl<'a> SdlRender<'a> {
     pub fn new(size: [u32; 2], scale: u32) -> Self {
-        if scale > 10 {
-            panic!("Scale is too big");
-        }
         let scaled_size = [size[0] * scale, size[1] * scale];
         let surface = Surface::new(scaled_size[0], scaled_size[1], 
             PixelFormatEnum::RGBA8888).expect("Cannot create SDL2 surface");
         let canvas = Canvas::from_surface(surface).expect("Cannot create SDL2 canvas");
         let texture_creator = canvas.texture_creator();
-        let texture = texture_creator.create_texture(PixelFormatEnum::RGBA8888, 
-            TextureAccess::Streaming, size[0], size[1]).expect("Cannot create SDL2 texture");
+        let texture = texture_creator.create_texture_streaming(PixelFormatEnum::RGBA8888, 
+            size[0], size[1]).expect("Cannot create SDL2 texture");
         Self {
             canvas: canvas,
             texture: texture,

@@ -1556,6 +1556,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_glow",
+ "epaint",
  "gilrs",
  "glow",
  "glutin",

@@ -3,6 +3,7 @@ pub struct VideoMemory {
     memory: Vec<u32>,
     pub wight: usize,
     pub height: usize,
+    changed: bool,
 }
 
 pub trait VideoOut {
@@ -16,6 +17,7 @@ impl VideoMemory {
             memory: vec![0u32; width * height],
             wight: width,
             height: height,
+            changed: false,
         }
     }
 
@@ -42,4 +44,5 @@ impl VideoOut for VideoMemory {
         }
         out
     }
+
 }

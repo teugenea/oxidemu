@@ -2,7 +2,7 @@ extern crate common;
 
 use common::bus::{Writable, Readable};
 use common::memory::Memory;
-use common::cpu::Cpu;
+use common::cpu::*;
 use common::video::{ VideoMemory, VideoOut };
 use common::utils;
 use common::input::*;
@@ -101,13 +101,14 @@ impl Chip8 {
 
     fn get_rand() -> u8 { thread_rng().gen_range(0..256) as u8}
 
-    fn do_cycle(&mut self) {
+    fn do_cycle(&mut self) -> CycleResult{
         let opcode = self.memory.read_word(self.pc as usize).expect("Cannot read from memory");
         self.pc += 2;
         self.opcode = opcode;
-        self.exec_intruction();
+        let res = self.exec_intruction();
         if self.delay_timer > 0 { self.delay_timer -= 1 }
         if self.sound_timer > 0 { self.sound_timer -= 1 }
+        res
     }
 
     pub fn load_rom(&mut self, file_name: String) {
@@ -123,42 +124,43 @@ impl Chip8 {
         }
     }
 
-    fn exec_intruction(&mut self) {
+    fn exec_intruction(&mut self) -> CycleResult {
+        let mut res = CycleResult::default();
         match Chip8::decode(&self.opcode) {
-            0x0000 => self.op_00e0(),
-            0x000E => self.op_00ee(),
-            0x1000 => self.op_1nnn(),
-            0x2000 => self.op_2nnn(),
-            0x3000 => self.op_3xkk(),
-            0x4000 => self.op_4xkk(),
-            0x5000 => self.op_5xy0(),
-            0x6000 => self.op_6xkk(),
-            0x7000 => self.op_7xkk(),
-            0x8000 => self.op_8xy0(),
-            0x8001 => self.op_8xy1(),
-            0x8002 => self.op_8xy2(),
-            0x8003 => self.op_8xy3(),
-            0x8004 => self.op_8xy4(),
-            0x8005 => self.op_8xy5(),
-            0x8006 => self.op_8xy6(),
-            0x8007 => self.op_8xy7(),
-            0x800E => self.op_8xyE(),
-            0x9000 => self.op_9xy0(),
-            0xA000 => self.op_Annn(),
-            0xB000 => self.op_Bnnn(),
-            0xC000 => self.op_Cxkk(),
-            0xD000 => self.op_Dxyn(),
-            0xE00E => self.op_Ex9E(),
-            0xE001 => self.op_ExA1(),
-            0xF007 => self.op_Fx07(),
-            0xF015 => self.op_Fx15(),
-            0xF018 => self.op_Fx18(),
-            0xF029 => self.op_Fx29(),
-            0xF033 => self.op_Fx33(),
-            0xF055 => self.op_Fx55(),
-            0xF065 => self.op_Fx65(),
-            0xF00A => self.op_Fx0A(),
-            0xF01E => self.op_Fx1E(),
+            0x0000 => { self.op_00e0(); res },
+            0x000E => { self.op_00ee(); res },
+            0x1000 => { self.op_1nnn(); res },
+            0x2000 => { self.op_2nnn(); res },
+            0x3000 => { self.op_3xkk(); res },
+            0x4000 => { self.op_4xkk(); res },
+            0x5000 => { self.op_5xy0(); res },
+            0x6000 => { self.op_6xkk(); res },
+            0x7000 => { self.op_7xkk(); res },
+            0x8000 => { self.op_8xy0(); res },
+            0x8001 => { self.op_8xy1(); res },
+            0x8002 => { self.op_8xy2(); res },
+            0x8003 => { self.op_8xy3(); res },
+            0x8004 => { self.op_8xy4(); res },
+            0x8005 => { self.op_8xy5(); res },
+            0x8006 => { self.op_8xy6(); res },
+            0x8007 => { self.op_8xy7(); res },
+            0x800E => { self.op_8xyE(); res },
+            0x9000 => { self.op_9xy0(); res },
+            0xA000 => { self.op_Annn(); res },
+            0xB000 => { self.op_Bnnn(); res },
+            0xC000 => { self.op_Cxkk(); res },
+            0xD000 => { self.op_Dxyn(); res.video_buff_changed=true; res },
+            0xE00E => { self.op_Ex9E(); res },
+            0xE001 => { self.op_ExA1(); res },
+            0xF007 => { self.op_Fx07(); res },
+            0xF015 => { self.op_Fx15(); res },
+            0xF018 => { self.op_Fx18(); res },
+            0xF029 => { self.op_Fx29(); res },
+            0xF033 => { self.op_Fx33(); res },
+            0xF055 => { self.op_Fx55(); res },
+            0xF065 => { self.op_Fx65(); res },
+            0xF00A => { self.op_Fx0A(); res },
+            0xF01E => { self.op_Fx1E(); res },
             y => {
                 panic!("Cannot decode instruction {}", y);
             }
@@ -466,12 +468,13 @@ impl Chip8 {
 
 impl Cpu for Chip8 {
     
-    fn cycle(&mut self) {
+    fn cycle(&mut self) -> CycleResult {
         let time = Chip8::get_time();
         if self.active && self.last_cycle_time + self.cycle_delay <= time {
-            self.do_cycle();
             self.last_cycle_time = time;
+            return self.do_cycle();
         }
+        CycleResult::default()
     }
 
 }
