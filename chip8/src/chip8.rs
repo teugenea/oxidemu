@@ -5,6 +5,7 @@ use common::memory::Memory;
 use common::cpu::Cpu;
 use common::video::{ VideoMemory, VideoOut };
 use common::utils;
+use common::input::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
@@ -37,7 +38,6 @@ const FONT_SET: [u8; 80] = [
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
 
-
 pub struct Chip8 {
     memory: Memory,
     video_memory: VideoMemory,
@@ -57,6 +57,7 @@ pub struct Chip8 {
 
 impl Chip8 {
     pub fn new() -> Self {
+
         Chip8 {
             memory: Chip8::init_memory(),
             video_memory: VideoMemory::new(64, 32),
@@ -70,7 +71,7 @@ impl Chip8 {
             sound_timer: 0,
             keypad: vec![0u8; KEY_COUNT],
             last_cycle_time: Chip8::get_time(),
-            cycle_delay: 50,
+            cycle_delay: 5,
             active: false,
         }
     }
@@ -94,7 +95,7 @@ impl Chip8 {
         match code >> 12 {
             0x0|0x8|0xE => opcode & 0xF00F,
             0xF => opcode & 0xF0FF,
-            _ => opcode & 0xF000
+            _ => code
         }
     }
 
@@ -229,7 +230,11 @@ impl Chip8 {
     fn op_7xkk(&mut self) {
         let vx = (self.opcode & 0x0F00) >> 8;
         let byte = self.opcode & 0x00FF;
-        self.registers[vx as usize] = byte as u8;
+        let mut res: u16 = self.registers[vx as usize] as u16 + byte as u16;
+        if res > 255 {
+            res = res - 255;
+        }
+        self.registers[vx as usize] = res as u8;
     }
 
     //LD Vx, Vy
@@ -270,7 +275,7 @@ impl Chip8 {
         } else {
             self.registers[0xF] = 0;
         }
-        self.registers[vx] = sum as u8 & 0xFF;
+        self.registers[vx] = (sum & 0xFF) as u8;
     }
 
     //SUB Vx, Vy
@@ -398,11 +403,10 @@ impl Chip8 {
         for key_number in 0..KEY_COUNT {
             if self.keypad[key_number] != 0 {
                 self.registers[vx] = key_number as u8;
-                break;
-            } else {
-                self.pc -= 2;
+                return;
             }
         }
+        self.pc -= 2;
     }
 
     //Fx15 - LD DT, Vx. Set delay timer = Vx
@@ -435,11 +439,11 @@ impl Chip8 {
         let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         let mut value = self.registers[vx];
         let addr = self.index as usize;
-        self.memory.write_byte(addr + 2, value % 10).expect("");
+        self.memory.write_byte(addr + 2, value % 10).expect("!");
         value /= 10;
-        self.memory.write_byte(addr + 1, value % 10).expect("");
+        self.memory.write_byte(addr + 1, value % 10).expect("!");
         value /= 10;
-        self.memory.write_byte(addr, value % 10).expect("");
+        self.memory.write_byte(addr, value % 10).expect("!");
     }
 
     //Fx55 - LD [I], Vx. Store registers V0 through Vx in memory starting at location I
@@ -447,7 +451,7 @@ impl Chip8 {
         let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         for i in 0..vx+1 {
             let addr = self.index as usize + i;
-            self.memory.write_byte(addr, self.registers[i]).expect("");
+            self.memory.write_byte(addr, self.registers[i]).expect("!");
         }
     }
 
@@ -455,7 +459,7 @@ impl Chip8 {
     fn op_Fx65(&mut self) {
         let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         for i in 0..vx+1 {
-            self.registers[i] = self.memory.read_byte(self.index as usize + i).expect("");
+            self.registers[i] = self.memory.read_byte(self.index as usize + i).expect("!");
         }
     }
 }
@@ -480,6 +484,12 @@ impl VideoOut for Chip8 {
 
     fn get_video_buf_8(&self) -> Vec<u8> {
         self.video_memory.get_video_buf_8()
+    }
+}
+
+impl InputProcessor for Chip8 {
+    fn process_input(&mut self, key: InputKey) {
+
     }
 }
 

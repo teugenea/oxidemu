@@ -9,6 +9,7 @@ use crate::render::SdlRender;
 use common::cpu::Cpu;
 use chip8::chip8::Chip8;
 use common::video::VideoOut;
+use common::input::*;
 
 pub struct OxidemuApp<'a> {
     quit: bool,
@@ -21,7 +22,7 @@ impl<'a> Default for OxidemuApp<'a> {
     fn default() -> Self {
         let mut chip = Chip8::new();
         chip.load_rom(String::from(
-            "D:\\Projects\\rusty-emul\\chip8-roms\\demos\\Stars [Sergey Naydenov, 2010].ch8",
+            "D:\\Projects\\rusty-emul\\chip8-roms\\games\\Airplane.ch8",
         ));
 
         Self {
@@ -112,6 +113,10 @@ pub fn show() {
                 glutin::event_loop::ControlFlow::Wait
             };
 
+            if let Some(gilrs::Event { id, event, time }) = window.gilrs.next_event() {
+                println!("{:?} New event from {}: {:?}", time, id, event);
+            }
+
             {
                 unsafe {
                     use glow::HasContext as _;
@@ -145,10 +150,12 @@ pub fn show() {
                 if let glutin::event::WindowEvent::KeyboardInput {
                     device_id,
                     input,
-                    is_synthetic,
+                    is_synthetic: _,
                 } = &event
                 {
-                    println!("{:?}", input);
+                    window.em.process_input(InputKey::new(InputDevice::Keyboard(0),
+                        input.scancode,
+                        input.state == winit::event::ElementState::Pressed));
                 }
 
                 if let glutin::event::WindowEvent::Resized(physical_size) = &event {
