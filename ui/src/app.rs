@@ -26,7 +26,7 @@ impl<'a> Default for OxidemuApp<'a> {
     fn default() -> Self {
         let mut chip = Chip8::new();
         chip.load_rom(String::from(
-            "D:\\Projects\\rusty-emul\\chip8-roms\\games\\Breakout (Brix hack) [David Winter, 1997].ch8",
+            "D:\\Projects\\rusty-emul\\chip8-roms\\games\\Airplane.ch8",
         ));
 
         Self {
@@ -52,107 +52,74 @@ impl<'a> OxidemuApp<'a> {
         });
     }
 
-    fn add_video(&mut self, ctx: &egui::Context) {
-        let central_frame = Frame {
-            inner_margin: egui::style::Margin::same(0.0),
-            ..Default::default()
-        };
-        egui::CentralPanel::default()
-            .frame(central_frame)
-            .show(ctx, |ui| {
-                let cnv = egui::Frame::dark_canvas(ui.style())
-                    .rounding(eframe::egui::Rounding::none())
-                    .inner_margin(egui::style::Margin::same(0.0));
-                cnv.show(ui, |ui| {
-                    ui.ctx().request_repaint();
-                    let res = self.em.cycle();
-                    self.render(self.em.get_video_buf_8(), ui, res.video_buff_changed);
-                    
-                    if let Some(event) = self.gilrs.next_event() {
-                        println!("{:?}", event);
-                    }
-                    //println!("{:?}", Instant::now());
-                });
-            });
-    }
-    
-    fn render(&mut self, pixels: Vec<u8>, ui: &mut egui::Ui, ch: bool) {
-
-        if let Some(m) = &self.texture {
-            if !ch {
-            let size = m.size_vec2();
-            ui.image(m, size);
-            return;
-            }
-        }
-
-        let img = ColorImage::from_rgba_unmultiplied(
-            [
-                self.sdl_render.scaled_size[0] as usize,
-                self.sdl_render.scaled_size[1] as usize,
-            ],
-            &self.sdl_render.get_pixels(pixels),
-        );
-
-        let tt: &mut egui::TextureHandle =
-            self.texture.get_or_insert_with(|| {
-                ui.ctx().load_texture("render_image", img.clone())
-            });
-        tt.set(ImageData::Color(img));
-
-        let size = tt.size_vec2();
-        ui.image(tt, size);
-    }
 }
 
 pub fn show() {
     let clear_color = [0.0, 0.0, 0.0];
 
     let event_loop = glutin::event_loop::EventLoop::with_user_event();
-    let (gl_window, gl) = create_display(&event_loop);
-    let gl = std::rc::Rc::new(gl);
+    let display = create_display(&event_loop);
+    let mut egui_glium = egui_glium::EguiGlium::new(&display);
 
-    let mut egui_glow = egui_glow::winit::EguiGlow::new(gl_window.window(), gl.clone());
     let mut window = OxidemuApp::default();
+
+    let glium_image = glium::texture::RawImage2d::from_raw_rgba(
+        window.sdl_render.get_pixels(window.em.get_video_buf_8()),
+        (window.sdl_render.scaled_size[0], window.sdl_render.scaled_size[1]));
+    let image_size = egui::Vec2::new(glium_image.width as f32, glium_image.height as f32);
+    let glium_texture = glium::texture::SrgbTexture2d::new(&display, glium_image).unwrap();
+    let glium_texture = std::rc::Rc::new(glium_texture);
+    let texture_id = egui_glium.painter.register_native_texture(glium_texture);
 
     event_loop.run(move |event, _, control_flow| {
         let mut redraw = || {
-            let needs_repaint = egui_glow.run(gl_window.window(), |egui_ctx| {
+
+            let res = window.em.cycle();
+            if res.video_buff_changed {
+                let glium_image = glium::texture::RawImage2d::from_raw_rgba(
+                    window.sdl_render.get_pixels(window.em.get_video_buf_8()),
+                    (window.sdl_render.scaled_size[0], window.sdl_render.scaled_size[1]));
+                let glium_texture = glium::texture::SrgbTexture2d::new(&display, glium_image).unwrap();
+                let glium_texture = std::rc::Rc::new(glium_texture);
+                egui_glium.painter.replace_native_texture(texture_id, glium_texture);
+            }
+
+            let needs_repaint = egui_glium.run(&display, |egui_ctx| {
                 egui_ctx.set_visuals(egui::Visuals::dark());
-                window.add_menu(egui_ctx);
-                window.add_video(egui_ctx);
+                egui::Window::new("NativeTextureDisplay").show(egui_ctx, |ui| {
+                    ui.image(texture_id, image_size);
+                });
             });
 
             *control_flow = if window.quit {
                 glutin::event_loop::ControlFlow::Exit
             } else if needs_repaint {
-                gl_window.window().request_redraw();
+                display.gl_window().window().request_redraw();
                 glutin::event_loop::ControlFlow::Poll
             } else {
-                glutin::event_loop::ControlFlow::Wait
+                glutin::event_loop::ControlFlow::Poll
             };
 
             // if let Some(gilrs::Event { id, event, time }) = window.gilrs.next_event() {
                 // println!("{:?} New event from {}: {:?}", time, id, event);
             // }
-
             {
-                unsafe {
-                    use glow::HasContext as _;
-                    gl.clear_color(clear_color[0], clear_color[1], clear_color[2], 1.0);
-                    gl.clear(glow::COLOR_BUFFER_BIT);
-                }
+                use glium::Surface as _;
+                let mut target = display.draw();
+
+                let color = egui::Rgba::from_rgb(0.1, 0.3, 0.2);
+                target.clear_color(color[0], color[1], color[2], color[3]);
 
                 // draw things behind egui here
 
-                egui_glow.paint(gl_window.window());
+                egui_glium.paint(&display, &mut target);
 
                 // draw things on top of egui here
 
-                gl_window.swap_buffers().unwrap();
+                target.finish().unwrap();
             }
         };
-
+        
         match event {
             // Platform-dependent event handlers to workaround a winit bug
             // See: https://github.com/rust-windowing/winit/issues/987
@@ -166,33 +133,9 @@ pub fn show() {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                 }
 
-                if let glutin::event::WindowEvent::KeyboardInput {
-                    device_id,
-                    input,
-                    is_synthetic: _,
-                } = &event
-                {
-                    window.em.process_input(InputKey::new(InputDevice::Keyboard(0),
-                        input.scancode,
-                        input.state == winit::event::ElementState::Pressed));
-                }
+                egui_glium.on_event(&event);
 
-                if let glutin::event::WindowEvent::Resized(physical_size) = &event {
-                    gl_window.resize(*physical_size);
-                } else if let glutin::event::WindowEvent::ScaleFactorChanged {
-                    new_inner_size,
-                    ..
-                } = &event
-                {
-                    gl_window.resize(**new_inner_size);
-                }
-
-                egui_glow.on_event(&event);
-
-                gl_window.window().request_redraw(); // TODO: ask egui if the events warrants a repaint instead
-            }
-            glutin::event::Event::LoopDestroyed => {
-                egui_glow.destroy();
+                display.gl_window().window().request_redraw(); // TODO: ask egui if the events warrants a repaint instead
             }
 
             _ => (),
@@ -200,33 +143,20 @@ pub fn show() {
     });
 }
 
-fn create_display(
-    event_loop: &glutin::event_loop::EventLoop<()>,
-) -> (
-    glutin::WindowedContext<glutin::PossiblyCurrent>,
-    glow::Context,
-) {
+fn create_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
     let window_builder = glutin::window::WindowBuilder::new()
         .with_resizable(true)
         .with_inner_size(glutin::dpi::LogicalSize {
             width: 800.0,
             height: 600.0,
         })
-        .with_title("egui_glow example");
+        .with_title("egui_glium example");
 
-    let gl_window = unsafe {
-        glutin::ContextBuilder::new()
-            .with_depth_buffer(0)
-            .with_srgb(true)
-            .with_stencil_buffer(0)
-            .with_vsync(false)
-            .build_windowed(window_builder, event_loop)
-            .unwrap()
-            .make_current()
-            .unwrap()
-    };
+    let context_builder = glutin::ContextBuilder::new()
+        .with_depth_buffer(0)
+        .with_srgb(true)
+        .with_stencil_buffer(0)
+        .with_vsync(false);
 
-    let gl = unsafe { glow::Context::from_loader_function(|s| gl_window.get_proc_address(s)) };
-
-    (gl_window, gl)
+    glium::Display::new(window_builder, context_builder, event_loop).unwrap()
 }
