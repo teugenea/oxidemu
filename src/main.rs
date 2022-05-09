@@ -1,4 +1,4 @@
 
 fn main() {
-    ui::app::show();
+    ui::show();
 }

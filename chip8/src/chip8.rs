@@ -71,7 +71,7 @@ impl Chip8 {
             sound_timer: 0,
             keypad: vec![0u8; KEY_COUNT],
             last_cycle_time: Chip8::get_time(),
-            cycle_delay: 5,
+            cycle_delay: 0,
             active: false,
         }
     }

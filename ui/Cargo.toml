@@ -4,25 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eframe = "0.18.0"
-egui = "0.18.1"
-epaint = "0.18.1"
-egui-winit = "0.18.0"
-egui_glium = "0.18.0"
-glutin = "0.28.0"
-glow = "0.11.2"
-gilrs = "0.8.1"
-winit = "0.26.1"
-glium = "0.31"
+glium = { version = "0.30", default-features = true }
+imgui = "0.8.2"
+imgui-winit-support = "0.8.2"
+imgui-glium-renderer = "0.8.2"
+sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
 
-common = { path = "../common" }
 chip8 = { path = "../chip8" }
-
-[features]
-default = []
-persistence = ["eframe/persistence"]
-
-[dependencies.sdl2]
-features = ["unsafe_textures"]
-version = "0.35.2"
-default-features = false
+common = { path = "../common" }
