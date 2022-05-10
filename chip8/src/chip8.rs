@@ -53,6 +53,7 @@ pub struct Chip8 {
     last_cycle_time: u128,
     cycle_delay: u128,
     active: bool,
+    cnt: u32,
 }
 
 impl Chip8 {
@@ -73,6 +74,7 @@ impl Chip8 {
             last_cycle_time: Chip8::get_time(),
             cycle_delay: 0,
             active: false,
+            cnt: 0,
         }
     }
 
@@ -125,7 +127,9 @@ impl Chip8 {
     }
 
     fn exec_intruction(&mut self) -> CycleResult {
+        self.cnt += 1;
         let mut res = CycleResult::default();
+        res.cycle_count = self.cnt;
         match Chip8::decode(&self.opcode) {
             0x0000 => { self.op_00e0(); res },
             0x000E => { self.op_00ee(); res },

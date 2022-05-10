@@ -62,9 +62,6 @@ impl<'a> CustomTexturesApp<'a> {
         gl_ctx: &dyn Facade,
     ) -> Result<(), Box<dyn Error>> {
         let r = self.em.cycle();
-        if !r.video_buff_changed {
-            return Ok(())
-        }
         let width = self.sdl_render.scaled_size[0];
         let height = self.sdl_render.scaled_size[1];
 
@@ -129,12 +126,21 @@ impl System {
             ..
         } = self;
         let mut last_frame = Instant::now();
+        let mut start = std::time::Instant::now();
+        let mut frames = 0;
 
         event_loop.run(move |event, _, control_flow| match event {
             Event::NewEvents(_) => {
+                frames += 1;
+                if start.elapsed().as_secs() >= 1 {
+                    println!("FPS: {:.0}", frames as f64 / start.elapsed().as_millis() as f64 * 1000.0);
+                    frames = 0;
+                    start = std::time::Instant::now();
+                }
                 let now = Instant::now();
                 imgui.io_mut().update_delta_time(now - last_frame);
                 last_frame = now;
+                
             }
             Event::MainEventsCleared => {
                 let gl_window = display.gl_window();
@@ -172,6 +178,12 @@ impl System {
                 event: WindowEvent::CloseRequested,
                 ..
             } => *control_flow = ControlFlow::Exit,
+            Event::WindowEvent {
+                event: WindowEvent::KeyboardInput{device_id, input, is_synthetic},
+                ..
+            } => {
+                println!("{:?}", input);
+            }
             event => {
                 let gl_window = display.gl_window();
                 platform.handle_event(imgui.io_mut(), gl_window.window(), &event);
@@ -183,8 +195,7 @@ impl System {
 pub fn init(title: &str) -> System {
     let event_loop = EventLoop::new();
     let context = glutin::ContextBuilder::new()
-        .with_vsync(false)
-        .with_hardware_acceleration(Some(true));
+        .with_vsync(true);
     let builder = WindowBuilder::new()
         .with_title(title.to_owned())
         .with_inner_size(glutin::dpi::LogicalSize::new(1024f64, 768f64));
