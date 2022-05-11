@@ -1,6 +1,4 @@
-use chip8::chip8::Chip8;
-use common::cpu::Cpu;
-use common::video::VideoOut;
+use common::emulator::Emulator;
 use glium::backend::Facade;
 use glium::glutin;
 use glium::glutin::event::{Event, WindowEvent};
@@ -26,7 +24,7 @@ mod render;
 struct CustomTexturesApp<'a> {
     my_texture_id: Option<TextureId>,
     sdl_render: render::SdlRender<'a>,
-    em: chip8::chip8::Chip8,
+    em: Box<dyn Emulator>,
 }
 
 impl<'a> CustomTexturesApp<'a> {
@@ -38,7 +36,7 @@ impl<'a> CustomTexturesApp<'a> {
         Self {
             my_texture_id: None,
             sdl_render: render::SdlRender::new([64, 32], 10),
-            em,
+            em: Box::new(em),
         }
     }
 
@@ -65,7 +63,7 @@ impl<'a> CustomTexturesApp<'a> {
         let width = self.sdl_render.scaled_size[0];
         let height = self.sdl_render.scaled_size[1];
 
-        let pixels = self.sdl_render.get_pixels(self.em.get_video_buf_8());
+        let pixels = self.sdl_render.get_pixels(self.em.video_buffer());
         let raw = RawImage2d {
             data: Cow::Owned(pixels),
             width: width as u32,
@@ -73,7 +71,6 @@ impl<'a> CustomTexturesApp<'a> {
             format: ClientFormat::U8U8U8U8,
         };
         if let Some(tex) = self.my_texture_id {
-            //textures.replace(tex, texture);
             if let Some(tt) = textures.get(tex) {
                 let rc = glium::Rect {
                     left: 0,
@@ -182,7 +179,7 @@ impl System {
                 event: WindowEvent::KeyboardInput{device_id, input, is_synthetic},
                 ..
             } => {
-                println!("{:?}", input);
+                
             }
             event => {
                 let gl_window = display.gl_window();

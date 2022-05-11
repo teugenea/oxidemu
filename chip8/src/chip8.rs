@@ -1,11 +1,11 @@
 extern crate common;
 
-use common::bus::{Writable, Readable};
-use common::memory::Memory;
+use common::ram::Ram;
+use common::vram::Vram;
 use common::cpu::*;
-use common::video::{ VideoMemory, VideoOut };
 use common::utils;
 use common::input::*;
+use common::emulator::Emulator;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
@@ -39,8 +39,8 @@ const FONT_SET: [u8; 80] = [
 ];
 
 pub struct Chip8 {
-    memory: Memory,
-    video_memory: VideoMemory,
+    memory: Ram,
+    video_memory: Vram,
     registers: Vec<u8>,
     stack: Vec<u16>,
     pc: u16,
@@ -61,7 +61,7 @@ impl Chip8 {
 
         Chip8 {
             memory: Chip8::init_memory(),
-            video_memory: VideoMemory::new(64, 32),
+            video_memory: Vram::new(64, 32),
             registers: vec![0u8; REGISTERS_COUNT],
             stack: vec![0u16; STACK_LEVELS],
             pc: START_ADDRESS as u16,
@@ -78,8 +78,8 @@ impl Chip8 {
         }
     }
 
-    fn init_memory() -> Memory {
-        let mut memory = Memory::new(MEMORY_SIZE);
+    fn init_memory() -> Ram {
+        let mut memory = Ram::new(MEMORY_SIZE);
         let mut i = FONTSET_START_ADDRESS;
         for byte in FONT_SET {
             let res = memory.write_byte(i, byte);
@@ -358,16 +358,16 @@ impl Chip8 {
         let vy = ((self.opcode & 0x00F0) >> 4) as usize;
         let height = self.opcode & 0x000F;
 
-        let x_pos = self.registers[vx] % self.video_memory.wight as u8;
-        let y_pos = self.registers[vy] % self.video_memory.height as u8;
+        let x_pos = self.registers[vx] % self.video_memory.width() as u8;
+        let y_pos = self.registers[vy] % self.video_memory.height() as u8;
         self.registers[0xF] = 0;
         for row in 0..height {
             let sprite_byte = self.memory.read_byte((self.index + row) as usize)
                 .expect("Cannot read");
             for col in 0..8 {
                 let sprite_pixel = sprite_byte & (0x80 >> col);
-                let addr = (y_pos as usize + row as usize) * self.video_memory.wight +
-                    (x_pos as usize + col as usize);
+                let addr = (y_pos as usize + row as usize) * self.video_memory.width()
+                    + (x_pos as usize + col as usize);
                 let screen_pixel = self.video_memory.read_pixel(addr);
                 if sprite_pixel != 0 {
                     if screen_pixel == COLOR {
@@ -483,24 +483,21 @@ impl Cpu for Chip8 {
 
 }
 
-impl VideoOut for Chip8 { 
+impl Emulator for Chip8 {
     
-    fn get_video_buf_32(&self) -> &Vec<u32> {
-        self.video_memory.get_video_buf_32()
+    fn video_buffer(&self) -> Vec<u8> {
+        self.video_memory.video_8()
     }
 
-    fn get_video_buf_8(&self) -> Vec<u8> {
-        self.video_memory.get_video_buf_8()
+    fn cycle(&mut self) {
+        self.do_cycle();
     }
+
+    fn process_input(&mut self, key: InputKey) { todo!() }
+
+    fn load_rom(&mut self, file_name: &String) { todo!() }
+
 }
-
-impl InputProcessor for Chip8 {
-    fn process_input(&mut self, key: InputKey) {
-
-    }
-}
-
-impl common::Emulator for Chip8 { }
 
 #[cfg(test)]
 mod Chip8Tests {

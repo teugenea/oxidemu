@@ -19,7 +19,3 @@ impl InputKey {
         }
     }
 }
-
-pub trait InputProcessor {
-    fn process_input(&mut self, key: InputKey);
-}
