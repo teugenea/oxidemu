@@ -1,11 +1,11 @@
 extern crate common;
 
+use common::errors::*;
 use common::ram::Ram;
 use common::vram::Vram;
-use common::cpu::*;
 use common::utils;
 use common::input::*;
-use common::emulator::Emulator;
+use common::emulator::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
@@ -103,8 +103,8 @@ impl Chip8 {
 
     fn get_rand() -> u8 { thread_rng().gen_range(0..256) as u8}
 
-    fn do_cycle(&mut self) -> CycleResult{
-        let opcode = self.memory.read_word(self.pc as usize).expect("Cannot read from memory");
+    fn do_cycle(&mut self) -> Result<CycleResult, EmulError> {
+        let opcode = self.memory.read_word(self.pc as usize)?;
         self.pc += 2;
         self.opcode = opcode;
         let res = self.exec_intruction();
@@ -113,8 +113,8 @@ impl Chip8 {
         res
     }
 
-    pub fn load_rom(&mut self, file_name: String) {
-        match utils::load_rom(&file_name) {
+    fn load_rom(&mut self, file_name: &String) {
+        match utils::load_rom(file_name) {
             Err(error) => print!("Cannot load rom {}", error),
             Ok(result) => {
                 let load_res = self.memory.write_block(START_ADDRESS, result);
@@ -126,47 +126,47 @@ impl Chip8 {
         }
     }
 
-    fn exec_intruction(&mut self) -> CycleResult {
+    fn exec_intruction(&mut self) -> Result<CycleResult, EmulError> {
         self.cnt += 1;
         let mut res = CycleResult::default();
         res.cycle_count = self.cnt;
         match Chip8::decode(&self.opcode) {
-            0x0000 => { self.op_00e0(); res },
-            0x000E => { self.op_00ee(); res },
-            0x1000 => { self.op_1nnn(); res },
-            0x2000 => { self.op_2nnn(); res },
-            0x3000 => { self.op_3xkk(); res },
-            0x4000 => { self.op_4xkk(); res },
-            0x5000 => { self.op_5xy0(); res },
-            0x6000 => { self.op_6xkk(); res },
-            0x7000 => { self.op_7xkk(); res },
-            0x8000 => { self.op_8xy0(); res },
-            0x8001 => { self.op_8xy1(); res },
-            0x8002 => { self.op_8xy2(); res },
-            0x8003 => { self.op_8xy3(); res },
-            0x8004 => { self.op_8xy4(); res },
-            0x8005 => { self.op_8xy5(); res },
-            0x8006 => { self.op_8xy6(); res },
-            0x8007 => { self.op_8xy7(); res },
-            0x800E => { self.op_8xyE(); res },
-            0x9000 => { self.op_9xy0(); res },
-            0xA000 => { self.op_Annn(); res },
-            0xB000 => { self.op_Bnnn(); res },
-            0xC000 => { self.op_Cxkk(); res },
-            0xD000 => { self.op_Dxyn(); res.video_buff_changed=true; res },
-            0xE00E => { self.op_Ex9E(); res },
-            0xE001 => { self.op_ExA1(); res },
-            0xF007 => { self.op_Fx07(); res },
-            0xF015 => { self.op_Fx15(); res },
-            0xF018 => { self.op_Fx18(); res },
-            0xF029 => { self.op_Fx29(); res },
-            0xF033 => { self.op_Fx33(); res },
-            0xF055 => { self.op_Fx55(); res },
-            0xF065 => { self.op_Fx65(); res },
-            0xF00A => { self.op_Fx0A(); res },
-            0xF01E => { self.op_Fx1E(); res },
+            0x000E => { self.op_00ee(); Ok(res) },
+            0x1000 => { self.op_1nnn(); Ok(res) },
+            0x0000 => { self.op_00e0(); Ok(res) },
+            0x2000 => { self.op_2nnn(); Ok(res) },
+            0x3000 => { self.op_3xkk(); Ok(res) },
+            0x4000 => { self.op_4xkk(); Ok(res) },
+            0x5000 => { self.op_5xy0(); Ok(res) },
+            0x6000 => { self.op_6xkk(); Ok(res) },
+            0x7000 => { self.op_7xkk(); Ok(res) },
+            0x8000 => { self.op_8xy0(); Ok(res) },
+            0x8001 => { self.op_8xy1(); Ok(res) },
+            0x8002 => { self.op_8xy2(); Ok(res) },
+            0x8003 => { self.op_8xy3(); Ok(res) },
+            0x8004 => { self.op_8xy4(); Ok(res) },
+            0x8005 => { self.op_8xy5(); Ok(res) },
+            0x8006 => { self.op_8xy6(); Ok(res) },
+            0x8007 => { self.op_8xy7(); Ok(res) },
+            0x800E => { self.op_8xyE(); Ok(res) },
+            0x9000 => { self.op_9xy0(); Ok(res) },
+            0xA000 => { self.op_Annn(); Ok(res) },
+            0xB000 => { self.op_Bnnn(); Ok(res) },
+            0xC000 => { self.op_Cxkk(); Ok(res) },
+            0xD000 => { self.op_Dxyn(); res.video_buff_changed=true; Ok(res) },
+            0xE00E => { self.op_Ex9E(); Ok(res) },
+            0xE001 => { self.op_ExA1(); Ok(res) },
+            0xF007 => { self.op_Fx07(); Ok(res) },
+            0xF015 => { self.op_Fx15(); Ok(res) },
+            0xF018 => { self.op_Fx18(); Ok(res) },
+            0xF029 => { self.op_Fx29(); Ok(res) },
+            0xF033 => { self.op_Fx33(); Ok(res) },
+            0xF055 => { self.op_Fx55(); Ok(res) },
+            0xF065 => { self.op_Fx65(); Ok(res) },
+            0xF00A => { self.op_Fx0A(); Ok(res) },
+            0xF01E => { self.op_Fx1E(); Ok(res) },
             y => {
-                panic!("Cannot decode instruction {}", y);
+                Err(EmulError::new(EmulErrorKind::UnknownInstruction, String::from("")))
             }
         }
     }
@@ -470,33 +470,25 @@ impl Chip8 {
     }
 }
 
-impl Cpu for Chip8 {
-    
-    fn cycle(&mut self) -> CycleResult {
-        let time = Chip8::get_time();
-        if self.active && self.last_cycle_time + self.cycle_delay <= time {
-            self.last_cycle_time = time;
-            return self.do_cycle();
-        }
-        CycleResult::default()
-    }
-
-}
-
 impl Emulator for Chip8 {
     
     fn video_buffer(&self) -> Vec<u8> {
         self.video_memory.video_8()
     }
 
-    fn cycle(&mut self) {
-        self.do_cycle();
+    fn cycle(&mut self) -> Result<CycleResult, EmulError>{
+        self.do_cycle()
     }
 
     fn process_input(&mut self, key: InputKey) { todo!() }
 
-    fn load_rom(&mut self, file_name: &String) { todo!() }
+    fn load_rom(&mut self, file_name: &String) {
+        self.load_rom(file_name);
+    }
 
+    fn resolution(&self) -> [usize; 2] {
+        [64, 32]
+    }
 }
 
 #[cfg(test)]

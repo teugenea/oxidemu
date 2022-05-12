@@ -1,46 +1,35 @@
-use std::fmt::Display;
+use std::fmt::{ Formatter, Display, Error };
 
 #[derive(Debug, PartialEq)]
 pub enum EmulErrorKind {
-    OutOfBounds,
+    OutOfBounds{ addr: usize, max: usize, size: usize },
     DeviceNotFound,
     RomFileNotFound,
+    UnknownInstruction,
 }
 
 #[derive(Debug)]
 pub struct EmulError {
     pub kind: EmulErrorKind,
-    pub message: String,
+    pub topic: String,
 }
 
 impl EmulError {
-    pub fn new(kind: EmulErrorKind, message: String) -> Self {
+    pub fn new(kind: EmulErrorKind, topic: String) -> Self {
         EmulError {
-            kind: kind,
-            message: message
+            kind,
+            topic
         }
-    }
-}
-
-impl EmulErrorKind {
-    fn to_string(&self) -> &'static str {
-        match self {
-            EmulErrorKind::DeviceNotFound => "DeviceNotFound",
-            EmulErrorKind::OutOfBounds => "OutOfBounds",
-            EmulErrorKind::RomFileNotFound => "RomFileNotFound",
-        }
-    }
-}
-
-impl Display for EmulErrorKind {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(formatter, "{}", self.to_string())
     }
 }
 
 impl Display for EmulError {
-    
-    fn fmt(&self, err: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(err, "({}, {})", self.kind, self.message)
+    fn fmt(&self, err: &mut Formatter<'_>) -> Result<(), Error> {
+        let msg = match self.kind {
+            EmulErrorKind::OutOfBounds{ addr, max, size } => 
+                format!("OutOfBounds: address: {0}, max address: {1}, data size: {2}", addr, max, size),
+            _ => String::from("")
+        };
+        write!(err, "({}, {})", self.topic, msg)
     }
 }

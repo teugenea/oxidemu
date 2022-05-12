@@ -9,6 +9,7 @@ imgui = "0.8.2"
 imgui-winit-support = "0.8.2"
 imgui-glium-renderer = "0.8.2"
 sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
+json-gettext = "4.0.3"
 
 chip8 = { path = "../chip8" }
 common = { path = "../common" }

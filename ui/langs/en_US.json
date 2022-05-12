@@ -1,0 +1,5 @@
+{
+    "Glyphs": "default",
+    "win title": "Oxidemu",
+    "err-out-ofbounds": "Load of bounds: {0}"
+}

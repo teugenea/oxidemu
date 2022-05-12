@@ -1,3 +1,4 @@
+use json_gettext::JSONGetText;
 use common::emulator::Emulator;
 use glium::backend::Facade;
 use glium::glutin;
@@ -18,30 +19,47 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::rc::Rc;
 use std::time::Instant;
+#[macro_use] extern crate json_gettext;
 
 mod render;
+mod win;
+mod appctx;
 
-struct CustomTexturesApp<'a> {
+use appctx::AppCtx;
+
+struct App<'a> {
     my_texture_id: Option<TextureId>,
     sdl_render: render::SdlRender<'a>,
     em: Box<dyn Emulator>,
+    get_text: JSONGetText<'a>,
+    ctx: AppCtx,
 }
 
-impl<'a> CustomTexturesApp<'a> {
+impl<'a> App<'a> {
     fn new() -> Self {
         let mut em = chip8::chip8::Chip8::new();
-        em.load_rom(String::from(
+        em.load_rom(&String::from(
             "D:/Projects/rusty-emul/chip8-roms/games/Airplane.ch8",
         ));
         Self {
             my_texture_id: None,
             sdl_render: render::SdlRender::new([64, 32], 10),
             em: Box::new(em),
+            get_text: App::init_localization(),
+            ctx: AppCtx::new(),
         }
     }
 
+    fn init_localization() -> JSONGetText<'a> {
+        static_json_gettext_build!(
+            "en_US";
+            "en_US" => "langs/en_US.json",
+            "ru_RU" => "langs/ru_RU.json",
+        ).unwrap()
+    }
+
     fn show_textures(&mut self, ui: &Ui, textures: &mut Textures<Texture>, facade: &dyn Facade) {
-        Window::new("Hello textures")
+        Window::new("Render")
             .size([400.0, 700.0], Condition::FirstUseEver)
             .build(ui, || {
                 let width = self.sdl_render.scaled_size[0];
@@ -223,7 +241,7 @@ pub fn init(title: &str) -> System {
             size_pixels: font_size,
             config: Some(FontConfig {
                 rasterizer_multiply: 1.75,
-                glyph_ranges: FontGlyphRanges::japanese(),
+                glyph_ranges: FontGlyphRanges::cyrillic(),
                 ..FontConfig::default()
             }),
         },
@@ -245,8 +263,8 @@ pub fn init(title: &str) -> System {
 }
 
 pub fn show() {
-    let mut system = init("ttt");
-    let mut my_app = CustomTexturesApp::new();
+    let system = init("Oxidemu");
+    let mut my_app = App::new();
     // my_app
     //     .register_textures(system.display.get_context(), system.renderer.textures())
     //     .expect("Failed to register textures");
