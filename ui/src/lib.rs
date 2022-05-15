@@ -1,3 +1,6 @@
+use crate::sys::igGetMainViewport;
+use chip8::chip8::Chip8;
+use crate::win::render::RenderWindow;
 use json_gettext::JSONGetText;
 use common::emulator::Emulator;
 use glium::backend::Facade;
@@ -5,48 +8,42 @@ use glium::glutin;
 use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
-use glium::texture::ClientFormat;
-use glium::texture::RawImage2d;
-use glium::uniforms::SamplerBehavior;
-use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter};
-use glium::{Display, Surface, Texture2d};
+
+use glium::{Display, Surface};
 use imgui::*;
 use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_glium_renderer::Texture;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
-use std::borrow::Cow;
-use std::error::Error;
-use std::rc::Rc;
+
 use std::time::Instant;
 #[macro_use] extern crate json_gettext;
 
 mod render;
 mod win;
-mod appctx;
 
-use appctx::AppCtx;
-
-struct App<'a> {
-    my_texture_id: Option<TextureId>,
-    sdl_render: render::SdlRender<'a>,
-    em: Box<dyn Emulator>,
-    get_text: JSONGetText<'a>,
-    ctx: AppCtx,
+struct State {
+    open_file: bool,
 }
 
-impl<'a> App<'a> {
-    fn new() -> Self {
-        let mut em = chip8::chip8::Chip8::new();
-        em.load_rom(&String::from(
-            "D:/Projects/rusty-emul/chip8-roms/games/Airplane.ch8",
-        ));
+pub struct GuiCtx<'a> {
+    ui: &'a Ui<'a>, 
+    textures: &'a mut Textures<Texture>, 
+    facade: &'a dyn Facade,
+    work_size: [f32; 2],
+    work_pos: [f32; 2],
+}
+
+pub struct AppCtx<'a> {
+    emulator: Box<dyn Emulator>,
+    get_text: JSONGetText<'a>,
+}
+
+impl<'a> AppCtx<'a> {
+    pub fn new() -> Self {
         Self {
-            my_texture_id: None,
-            sdl_render: render::SdlRender::new([64, 32], 10),
-            em: Box::new(em),
-            get_text: App::init_localization(),
-            ctx: AppCtx::new(),
+            emulator: Box::new(Chip8::new()),
+            get_text: AppCtx::init_localization(),
         }
     }
 
@@ -58,60 +55,50 @@ impl<'a> App<'a> {
         ).unwrap()
     }
 
-    fn show_textures(&mut self, ui: &Ui, textures: &mut Textures<Texture>, facade: &dyn Facade) {
-        Window::new("Render")
-            .size([400.0, 700.0], Condition::FirstUseEver)
-            .build(ui, || {
-                let width = self.sdl_render.scaled_size[0];
-                let height = self.sdl_render.scaled_size[1];
-                self.update_texture(textures, facade)
-                    .expect("Cannot update texture");
-                if let Some(my_texture_id) = self.my_texture_id {
-                    Image::new(my_texture_id, [width as f32, height as f32]).build(ui);
-                }
-            });
+    pub fn emulator(&self) -> &Box<dyn Emulator> {
+        &self.emulator
     }
 
-    fn update_texture(
-        &mut self,
-        textures: &mut Textures<Texture>,
-        gl_ctx: &dyn Facade,
-    ) -> Result<(), Box<dyn Error>> {
-        let r = self.em.cycle();
-        let width = self.sdl_render.scaled_size[0];
-        let height = self.sdl_render.scaled_size[1];
+    pub fn get_text(&self) -> &JSONGetText<'a> {
+        &self.get_text
+    }
+}
 
-        let pixels = self.sdl_render.get_pixels(self.em.video_buffer());
-        let raw = RawImage2d {
-            data: Cow::Owned(pixels),
-            width: width as u32,
-            height: height as u32,
-            format: ClientFormat::U8U8U8U8,
-        };
-        if let Some(tex) = self.my_texture_id {
-            if let Some(tt) = textures.get(tex) {
-                let rc = glium::Rect {
-                    left: 0,
-                    bottom: 0,
-                    width,
-                    height,
-                };
-                tt.texture.write(rc, raw);
+struct App<'a> {
+    ctx: AppCtx<'a>,
+    rn: RenderWindow<'a>,
+    state: State,
+}
+
+impl<'a> App<'a> {
+    fn new() -> Self {
+        Self {
+            rn: RenderWindow::new(),
+            ctx: AppCtx::new(),
+            state: State {
+                open_file: false,
             }
-        } else {
-            let gl_texture = Texture2d::new(gl_ctx, raw)?;
-            let texture = Texture {
-                texture: Rc::new(gl_texture),
-                sampler: SamplerBehavior {
-                    magnify_filter: MagnifySamplerFilter::Linear,
-                    minify_filter: MinifySamplerFilter::Linear,
-                    ..Default::default()
-                },
-            };
-            let texture_id = textures.insert(texture);
-            self.my_texture_id = Some(texture_id);
         }
-        Ok(())
+    }
+
+    fn show(&mut self, gui_ctx: &mut GuiCtx) {
+        self.rn.show_window(&self.ctx, gui_ctx);
+        self.main_menu(gui_ctx.ui);
+        if self.state.open_file {
+            println!("Open file");
+        }
+    }
+
+    fn main_menu(&mut self, ui: &Ui)  {
+        if let Some(menu_bar) = ui.begin_main_menu_bar() {
+            if let Some(menu) = ui.begin_menu("File") {
+                MenuItem::new("Open").build_with_ref(ui, &mut self.state.open_file);
+                ui.separator();
+                MenuItem::new("Exit").build(ui);
+                menu.end();
+            }
+            menu_bar.end();
+        }
     }
 }
 
@@ -127,7 +114,7 @@ pub struct System {
 
 impl System {
     pub fn main_loop<
-        F: FnMut(&mut bool, &mut Ui, &mut Textures<Texture>, &dyn Facade) + 'static,
+        F: FnMut(&mut bool, &mut GuiCtx) + 'static,
     >(
         self,
         mut run_ui: F,
@@ -165,20 +152,32 @@ impl System {
                 gl_window.window().request_redraw();
             }
             Event::RedrawRequested(_) => {
-                let mut ui = imgui.frame();
+                let ui = imgui.frame();
                 let mut run = true;
+                let mut gui = GuiCtx {
+                    ui: &ui,
+                    textures: renderer.textures(),
+                    facade: display.get_context(),
+                    work_size: [0.0, 0.0],
+                    work_pos: [0.0, 0.0],
+                };
 
-                run_ui(
-                    &mut run,
-                    &mut ui,
-                    renderer.textures(),
-                    display.get_context(),
-                );
+                unsafe {
+                    let vp = igGetMainViewport();
+                    let cont_size = (*vp).WorkSize;
+                    let cont_pos = (*vp).WorkPos;
+                    gui.work_size = [cont_size.x, cont_size.y];
+                    gui.work_pos = [cont_pos.x, cont_pos.y];
+                }
+
+
+                run_ui(&mut run, &mut gui);
                 if !run {
                     *control_flow = ControlFlow::Exit;
                 }
 
                 let gl_window = display.gl_window();
+                //println!("{:?}", gl_window.window().inner_size());
                 let mut target = display.draw();
                 target.clear_color_srgb(1.0, 1.0, 1.0, 1.0);
                 platform.prepare_render(&ui, gl_window.window());
@@ -265,8 +264,5 @@ pub fn init(title: &str) -> System {
 pub fn show() {
     let system = init("Oxidemu");
     let mut my_app = App::new();
-    // my_app
-    //     .register_textures(system.display.get_context(), system.renderer.textures())
-    //     .expect("Failed to register textures");
-    system.main_loop(move |_, ui, tex, facade| my_app.show_textures(ui, tex, facade));
+    system.main_loop(move |_, gui_ctx | my_app.show(gui_ctx));
 }
