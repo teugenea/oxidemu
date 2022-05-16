@@ -1,6 +1,3 @@
 {
-    "Glyphs": "default",
-    "win title": "Oxidemu",
-    "win-render-title": "Game",
-    "err-out-ofbounds": "Load of bounds: {0}"
+    "Glyphs": "default"
 }

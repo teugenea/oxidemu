@@ -11,22 +11,21 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::rc::Rc;
 
-use crate::AppCtx;
 use crate::render::SdlRender;
 
-pub struct RenderWindow<'a> {
+pub struct GameWindow<'a> {
     texture_id: Option<TextureId>,
     sdl_render: SdlRender<'a>,
 }
 
-impl<'a> RenderWindow<'a> {
+impl<'a> GameWindow<'a> {
     pub fn new() -> Self {
         Self {
             texture_id: None,
             sdl_render: SdlRender::new([64, 32], 10),
         }
     }
-
+/*
     pub fn show_window(
         &mut self,
         ctx: &AppCtx,
@@ -90,4 +89,5 @@ impl<'a> RenderWindow<'a> {
         }
         Ok(())
     }
+    */
 }
