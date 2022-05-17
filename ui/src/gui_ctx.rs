@@ -23,7 +23,6 @@ impl Default for UiState {
 }
 
 pub struct GuiCtx<'a> {
-    ui: &'a Ui<'a>, 
     textures: &'a mut Textures<Texture>, 
     facade: &'a dyn Facade,
     local: &'a JSONGetText<'a>,
@@ -35,7 +34,6 @@ pub struct GuiCtx<'a> {
 impl<'a> GuiCtx<'a> {
     
     pub fn new(
-        ui: &'a Ui<'a>, 
         textures: &'a mut Textures<Texture>, 
         facade: &'a dyn Facade,
         local: &'a JSONGetText<'a>,
@@ -44,15 +42,11 @@ impl<'a> GuiCtx<'a> {
         work_pos: [f32; 2]
     ) -> Self {
         Self {
-            ui, textures, facade, local, state, work_size, work_pos
+            textures, facade, local, state, work_size, work_pos
         }
     }
 
-    pub fn ui(&'a self) -> &'a Ui {
-        self.ui
-    }
-
-    pub fn textures(&'a mut self) -> &'a mut Textures<Texture> {
+    pub fn textures(&mut self) -> &mut Textures<Texture> {
         self.textures
     }
 
@@ -72,11 +66,11 @@ impl<'a> GuiCtx<'a> {
         self.state
     }
 
-    pub fn work_pos(&self) -> &[f32; 2] {
-        &self.work_pos
+    pub fn work_pos(&self) -> [f32; 2] {
+        self.work_pos.clone()
     }
 
-    pub fn work_size(&self) -> &[f32; 2] {
-        &self.work_size
+    pub fn work_size(&self) -> [f32; 2] {
+        self.work_size.clone()
     }
 }

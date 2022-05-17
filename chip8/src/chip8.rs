@@ -113,7 +113,7 @@ impl Chip8 {
         res
     }
 
-    fn load_rom(&mut self, file_name: &String) {
+    pub fn load_rom(&mut self, file_name: &String) {
         match utils::load_rom(file_name) {
             Err(error) => print!("Cannot load rom {}", error),
             Ok(result) => {
@@ -476,7 +476,10 @@ impl Emulator for Chip8 {
         self.video_memory.video_8()
     }
 
-    fn cycle(&mut self) -> Result<CycleResult, EmulError>{
+    fn cycle(&mut self) -> Result<CycleResult, EmulError> {
+        if !self.active {
+            return Ok(CycleResult::default());
+        }
         self.do_cycle()
     }
 

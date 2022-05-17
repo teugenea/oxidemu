@@ -1,26 +1,27 @@
 use imgui::Ui;
+use common::emulator::Emul;
 use crate::GuiCtx;
 use imgui::MenuItem;
+use super::game::GameWindow;
 
-pub struct MainWindow {
-    //rn: GameWindow<'a>,
+pub struct MainWindow<'a> {
+    rn: GameWindow<'a>,
 }
 
-impl MainWindow {
+impl<'a> MainWindow<'a> {
 
     pub fn new() -> Self {
         Self {
-            //rn: GameWindow::new(),
+            rn: GameWindow::new(),
         }
     }
     
-    pub fn show(&mut self, gui_ctx: &GuiCtx) {
-        //self.rn.show_window(&self.ctx, gui_ctx);
-        self.main_menu(gui_ctx);
+    pub fn show(&mut self, emul: Emul, ui: &Ui, gui_ctx: &mut GuiCtx) {
+        self.rn.show_window(emul, ui, gui_ctx);
+        self.main_menu(ui, gui_ctx);
     }
 
-    fn main_menu(&mut self, gui_ctx: &GuiCtx)  {
-        let ui = gui_ctx.ui();
+    fn main_menu(&mut self, ui: &Ui, gui_ctx: &GuiCtx)  {
         if let Some(menu_bar) = ui.begin_main_menu_bar() {
             if let Some(menu) = ui.begin_menu("File") {
                 MenuItem::new("Open").build(ui);

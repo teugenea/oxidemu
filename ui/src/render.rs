@@ -1,7 +1,7 @@
 use std::mem;
 
 use sdl2::surface::{Surface};
-use sdl2::render::{Canvas, TextureAccess, Texture};
+use sdl2::render::{Canvas, Texture};
 use sdl2::pixels::{PixelFormatEnum};
 
 pub struct SdlRender<'a> {

@@ -1,10 +1,11 @@
+use imgui::Ui;
+use common::emulator::Emul;
+use imgui::Window;
 use crate::GuiCtx;
-use crate::Window;
-use glium::backend::Facade;
 use glium::texture::{ClientFormat, RawImage2d};
 use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerBehavior};
 use glium::Texture2d;
-use imgui::{Condition, Image, TextureId, Textures, WindowFlags};
+use imgui::{Condition, Image, TextureId, WindowFlags};
 use imgui_glium_renderer::Texture;
 
 use std::borrow::Cow;
@@ -25,39 +26,36 @@ impl<'a> GameWindow<'a> {
             sdl_render: SdlRender::new([64, 32], 10),
         }
     }
-/*
+
     pub fn show_window(
         &mut self,
-        ctx: &AppCtx,
+        emul: Emul,
+        ui: &Ui,
         gui_ctx: &mut GuiCtx,
     ) {
-        let title = ctx.get_text();
-        let title = title.get_text("win-render-title").unwrap();
-        Window::new(title.as_str().unwrap())
+        Window::new("Game")
             .flags(WindowFlags::NO_TITLE_BAR | WindowFlags::NO_RESIZE)
-            .position(gui_ctx.work_pos, Condition::Always)
-            .size(gui_ctx.work_size, Condition::Always)
-            .build(gui_ctx.ui, || {
+            .position(gui_ctx.work_pos(), Condition::Always)
+            .size(gui_ctx.work_size(), Condition::Always)
+            .build(ui, || {
                 let width = self.sdl_render.scaled_size[0];
                 let height = self.sdl_render.scaled_size[1];
-                self.update_texture(ctx, gui_ctx.textures, gui_ctx.facade)
-                    .expect("Cannot update texture");
+                self.update_texture(emul, gui_ctx).expect("Cannot update texture");
                 if let Some(texture_id) = self.texture_id {
-                    Image::new(texture_id, [width as f32, height as f32]).build(gui_ctx.ui);
+                    Image::new(texture_id, [width as f32, height as f32]).build(ui);
                 }
             });
     }
 
     fn update_texture(
         &mut self,
-        ctx: &AppCtx,
-        textures: &mut Textures<Texture>,
-        gl_ctx: &dyn Facade,
+        emul: Emul,
+        gui_ctx: &mut GuiCtx
     ) -> Result<(), Box<dyn Error>> {
         let width = self.sdl_render.scaled_size[0];
         let height = self.sdl_render.scaled_size[1];
 
-        let pixels = self.sdl_render.get_pixels(ctx.emulator().video_buffer());
+        let pixels = self.sdl_render.get_pixels(emul.lock().unwrap().video_buffer());
         let raw = RawImage2d {
             data: Cow::Owned(pixels),
             width: width as u32,
@@ -65,7 +63,7 @@ impl<'a> GameWindow<'a> {
             format: ClientFormat::U8U8U8U8,
         };
         if let Some(tex) = self.texture_id {
-            if let Some(tt) = textures.get(tex) {
+            if let Some(tt) = gui_ctx.textures().get(tex) {
                 let rc = glium::Rect {
                     left: 0,
                     bottom: 0,
@@ -75,7 +73,7 @@ impl<'a> GameWindow<'a> {
                 tt.texture.write(rc, raw);
             }
         } else {
-            let gl_texture = Texture2d::new(gl_ctx, raw)?;
+            let gl_texture = Texture2d::new(gui_ctx.facade(), raw)?;
             let texture = Texture {
                 texture: Rc::new(gl_texture),
                 sampler: SamplerBehavior {
@@ -84,10 +82,10 @@ impl<'a> GameWindow<'a> {
                     ..Default::default()
                 },
             };
-            let texture_id = textures.insert(texture);
+            let texture_id = gui_ctx.textures().insert(texture);
             self.texture_id = Some(texture_id);
         }
         Ok(())
     }
-    */
+    
 }

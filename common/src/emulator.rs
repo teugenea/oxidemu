@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+use std::sync::Arc;
 use crate::input::InputKey;
 use crate::errors::EmulError;
 
@@ -22,3 +24,5 @@ pub trait Emulator {
     fn load_rom(&mut self, file_name: &String);
     fn resolution(&self) -> [usize; 2];
 }
+
+pub type Emul = Arc<Mutex<Box<dyn Emulator + Send>>>;
