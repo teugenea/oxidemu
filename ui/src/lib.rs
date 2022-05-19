@@ -1,4 +1,4 @@
-use common::emulator::Emul;
+use common::emulator::EmulMgr;
 use std::sync::Arc;
 use json_gettext::JSONGetText;
 use crate::win::main::MainWindow;
@@ -31,18 +31,18 @@ pub struct System {
     pub renderer: Renderer,
     pub font_size: f32,
     pub texture_id: Option<TextureId>,
-    pub em: Emul,
+    pub emul: EmulMgr,
 }
 
 impl System {
-    pub fn main_loop<F: FnMut(&mut bool, Emul, &Ui, &mut GuiCtx) + 'static>(self, mut run_ui: F) {
+    pub fn main_loop<F: FnMut(&mut bool, &EmulMgr, &Ui, &mut GuiCtx) + 'static>(self, mut run_ui: F) {
         let System {
             event_loop,
             display,
             mut imgui,
             mut platform,
             mut renderer,
-            em,
+            emul,
             ..
         } = self;
 
@@ -87,7 +87,7 @@ impl System {
                     work_pos,
                 );
 
-                run_ui(&mut run, Arc::clone(&em), &ui, &mut gui);
+                run_ui(&mut run, &emul, &ui, &mut gui);
                 if !run {
                     *control_flow = ControlFlow::Exit;
                 }
@@ -141,7 +141,7 @@ fn init_local<'a>() -> JSONGetText<'a> {
     ).unwrap()
 }
 
-fn init(title: &str, em: Emul) -> System {
+fn init(title: &str, em: EmulMgr) -> System {
     let event_loop = EventLoop::new();
     let context = glutin::ContextBuilder::new().with_vsync(true);
     let builder = WindowBuilder::new()
@@ -192,11 +192,11 @@ fn init(title: &str, em: Emul) -> System {
         renderer,
         font_size,
         texture_id: None,
-        em: em,
+        emul: em,
     }
 }
 
-pub fn show(em: Emul) {
+pub fn show(em: EmulMgr) {
     let system = init("Oxidemu", em);
     let mut main_window = MainWindow::new();
     system.main_loop(move |_, em, ui, gui_ctx| {

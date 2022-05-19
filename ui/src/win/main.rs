@@ -1,5 +1,5 @@
 use imgui::Ui;
-use common::emulator::Emul;
+use common::emulator::EmulMgr;
 use crate::GuiCtx;
 use imgui::MenuItem;
 use super::game::GameWindow;
@@ -16,7 +16,7 @@ impl<'a> MainWindow<'a> {
         }
     }
     
-    pub fn show(&mut self, emul: Emul, ui: &Ui, gui_ctx: &mut GuiCtx) {
+    pub fn show(&mut self, emul: &EmulMgr, ui: &Ui, gui_ctx: &mut GuiCtx) {
         self.rn.show_window(emul, ui, gui_ctx);
         self.main_menu(ui, gui_ctx);
     }

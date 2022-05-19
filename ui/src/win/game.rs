@@ -1,5 +1,5 @@
 use imgui::Ui;
-use common::emulator::Emul;
+use common::emulator::EmulMgr;
 use imgui::Window;
 use crate::GuiCtx;
 use glium::texture::{ClientFormat, RawImage2d};
@@ -29,7 +29,7 @@ impl<'a> GameWindow<'a> {
 
     pub fn show_window(
         &mut self,
-        emul: Emul,
+        emul: &EmulMgr,
         ui: &Ui,
         gui_ctx: &mut GuiCtx,
     ) {
@@ -49,13 +49,21 @@ impl<'a> GameWindow<'a> {
 
     fn update_texture(
         &mut self,
-        emul: Emul,
+        emul: &EmulMgr,
         gui_ctx: &mut GuiCtx
     ) -> Result<(), Box<dyn Error>> {
+
+        match emul.video_buffer() {
+            Err(e) => println!("Cannot"),
+            Ok(p) => self.convert_buffer(gui_ctx, p).unwrap()
+        }
+        Ok(())
+    }
+    
+    fn convert_buffer(&mut self, gui_ctx: &mut GuiCtx, buff: Vec<u8>) -> Result<(), Box<dyn Error>> {
         let width = self.sdl_render.scaled_size[0];
         let height = self.sdl_render.scaled_size[1];
-
-        let pixels = self.sdl_render.get_pixels(emul.lock().unwrap().video_buffer());
+        let pixels = self.sdl_render.get_pixels(buff);
         let raw = RawImage2d {
             data: Cow::Owned(pixels),
             width: width as u32,
@@ -87,5 +95,4 @@ impl<'a> GameWindow<'a> {
         }
         Ok(())
     }
-    
 }
