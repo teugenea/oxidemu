@@ -53,9 +53,14 @@ impl Default for EmulMgr {
 
 impl EmulMgr {
     pub fn set_emulator(&mut self, emulator: Box<dyn Emulator + Send>) {
-        if let Some(rc) = &self.emulator {
-            let (e, c) = rc.deref();
-            e.lock().unwrap().stop = true;
+        if self.emulator.is_some() {
+            let emul_opt = self.emulator.take();
+            if let Some(emul_sync) = emul_opt {
+                let (e, c) = emul_sync.deref();
+                e.lock().unwrap().stop = true;
+                let jh = self.thread_handle.take();
+                let _result = jh.ok_or("").unwrap().join();
+            }
         }
 
         let emul_sync = EmulSync {
@@ -71,14 +76,14 @@ impl EmulMgr {
     fn spawn_thread(&mut self, emulator: &Arc<(Mutex<EmulSync>, Condvar)>) -> JoinHandle<()> {
         let emul_rc = Arc::clone(emulator);
         thread::spawn(move || {
-            let (e, c) = emul_rc.deref();
-            while !e.lock().unwrap().stop {
-                let res = e.lock().unwrap().emulator.cycle();
-                if let Ok(r) = res {
-                    if r.cycle_count % 1_000_000 == 0 {
-                        println!("{:?}", r.cycle_count);
-                    }
+            loop {
+                let (e, c) = emul_rc.deref();
+                let mut emul_sync = e.lock().unwrap();
+                if emul_sync.stop {
+                    break;
                 }
+                emul_sync = c.wait_while(emul_sync, |es| es.pause).unwrap();
+                let _res = emul_sync.emulator.cycle();
             }
         })
     }
