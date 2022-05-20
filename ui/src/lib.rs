@@ -83,8 +83,7 @@ impl System {
                     &loc,
                     &mut state,
                     work_size,
-                    work_pos,
-                    10
+                    work_pos
                 );
 
                 run_ui(&mut run, &emul, &ui, &mut gui);
@@ -94,7 +93,7 @@ impl System {
 
                 let gl_window = display.gl_window();
                 let mut target = display.draw();
-                target.clear_color_srgb(0.177, 0.177, 0.177, 0.177);
+                target.clear_color_srgb(0.177, 0.177, 0.177, 1.0);
                 platform.prepare_render(&ui, gl_window.window());
                 let draw_data = ui.render();
                 renderer

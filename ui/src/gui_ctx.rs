@@ -11,6 +11,7 @@ pub enum GuiMode {
 pub struct UiState {
     pub open_file: bool,
     pub gui_mode: GuiMode,
+    pub render_scale: u32
 }
 
 impl Default for UiState {
@@ -18,6 +19,7 @@ impl Default for UiState {
         Self {
             open_file: false,
             gui_mode: GuiMode::GAME,
+            render_scale: 10,
         }
     }
 }
@@ -29,7 +31,6 @@ pub struct GuiCtx<'a> {
     state: &'a mut UiState,
     work_size: [f32; 2],
     work_pos: [f32; 2],
-    render_scale: u32,
 }
 
 impl<'a> GuiCtx<'a> {
@@ -40,11 +41,10 @@ impl<'a> GuiCtx<'a> {
         local: &'a JSONGetText<'a>,
         state: &'a mut UiState, 
         work_size: [f32; 2], 
-        work_pos: [f32; 2],
-        render_scale: u32
+        work_pos: [f32; 2]
     ) -> Self {
         Self {
-            textures, facade, local, state, work_size, work_pos, render_scale
+            textures, facade, local, state, work_size, work_pos
         }
     }
 
@@ -64,7 +64,7 @@ impl<'a> GuiCtx<'a> {
         }
     }
 
-    pub fn state(&'a mut self) -> &'a mut UiState {
+    pub fn state(&mut self) -> &mut UiState {
         self.state
     }
 
@@ -76,5 +76,4 @@ impl<'a> GuiCtx<'a> {
         self.work_size.clone()
     }
 
-    pub fn render_scale(&self) -> u32 { self.render_scale }
 }

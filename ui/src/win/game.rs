@@ -18,6 +18,7 @@ pub struct GameWindow<'a> {
     texture_id: Option<TextureId>,
     sdl_render: Option<SdlRender<'a>>,
     current_version: u32,
+    current_scale: u32,
 }
 
 impl<'a> GameWindow<'a> {
@@ -26,6 +27,7 @@ impl<'a> GameWindow<'a> {
             texture_id: None,
             sdl_render: None,
             current_version: 0,
+            current_scale: 0,
         }
     }
 
@@ -41,7 +43,7 @@ impl<'a> GameWindow<'a> {
             .size(gui_ctx.work_size(), Condition::Always)
             .build(ui, || {
                 if self.should_update_render(emul) {
-                    self.create_render(emul, gui_ctx.render_scale());
+                    self.create_render(emul, gui_ctx.state().render_scale);
                 }
                 let render = self.sdl_render.as_ref().ok_or("").unwrap();
                 let width = render.scaled_size()[0];
@@ -104,11 +106,10 @@ impl<'a> GameWindow<'a> {
     }
 
     fn should_update_render(&mut self, emul: &EmulMgr) -> bool {
-        let upd = self.sdl_render.is_none() || self.current_version != emul.version();
-        if upd {
-            self.current_version = emul.version();
+        if let Some(render) = self.sdl_render.as_ref() {
+            return self.current_version != emul.version() || *render.scale() != self.current_scale;
         }
-        upd
+        true
     }
 
     fn create_render(&mut self, emul: &EmulMgr, scale: u32) {
@@ -117,6 +118,8 @@ impl<'a> GameWindow<'a> {
         }
         if let Ok(resolution) = emul.resolution() {
             self.sdl_render = Some(SdlRender::new(resolution, scale));
+            self.current_version = emul.version();
+            self.current_scale = scale;
         }
     }
 }
