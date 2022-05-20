@@ -489,7 +489,7 @@ impl Emulator for Chip8 {
         self.load_rom(file_name);
     }
 
-    fn resolution(&self) -> [usize; 2] {
+    fn resolution(&self) -> [u32; 2] {
         [64, 32]
     }
 }

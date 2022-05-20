@@ -1,5 +1,4 @@
 use common::emulator::EmulMgr;
-use std::sync::Arc;
 use json_gettext::JSONGetText;
 use crate::win::main::MainWindow;
 use glium::backend::Facade;
@@ -85,6 +84,7 @@ impl System {
                     &mut state,
                     work_size,
                     work_pos,
+                    10
                 );
 
                 run_ui(&mut run, &emul, &ui, &mut gui);
@@ -115,7 +115,9 @@ impl System {
                         is_synthetic,
                     },
                 ..
-            } => {}
+            } => {
+                
+            }
             event => {
                 let gl_window = display.gl_window();
                 platform.handle_event(imgui.io_mut(), gl_window.window(), &event);

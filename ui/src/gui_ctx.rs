@@ -29,6 +29,7 @@ pub struct GuiCtx<'a> {
     state: &'a mut UiState,
     work_size: [f32; 2],
     work_pos: [f32; 2],
+    render_scale: u32,
 }
 
 impl<'a> GuiCtx<'a> {
@@ -39,10 +40,11 @@ impl<'a> GuiCtx<'a> {
         local: &'a JSONGetText<'a>,
         state: &'a mut UiState, 
         work_size: [f32; 2], 
-        work_pos: [f32; 2]
+        work_pos: [f32; 2],
+        render_scale: u32
     ) -> Self {
         Self {
-            textures, facade, local, state, work_size, work_pos
+            textures, facade, local, state, work_size, work_pos, render_scale
         }
     }
 
@@ -73,4 +75,6 @@ impl<'a> GuiCtx<'a> {
     pub fn work_size(&self) -> [f32; 2] {
         self.work_size.clone()
     }
+
+    pub fn render_scale(&self) -> u32 { self.render_scale }
 }

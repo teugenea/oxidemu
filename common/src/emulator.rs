@@ -1,9 +1,7 @@
 use crate::errors::EmulError;
 use crate::input::InputKey;
 use std::ops::Deref;
-use std::sync::Arc;
-use std::sync::Condvar;
-use std::sync::Mutex;
+use std::sync::{ Arc, Condvar, Mutex };
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -26,10 +24,8 @@ pub trait Emulator {
     fn cycle(&mut self) -> Result<CycleResult, EmulError>;
     fn process_input(&mut self, key: InputKey);
     fn load_rom(&mut self, file_name: &String);
-    fn resolution(&self) -> [usize; 2];
+    fn resolution(&self) -> [u32; 2];
 }
-
-pub type Emul = Arc<Mutex<Box<dyn Emulator + Send>>>;
 
 struct EmulSync {
     emulator: Box<dyn Emulator + Send>,
@@ -40,6 +36,8 @@ struct EmulSync {
 pub struct EmulMgr {
     emulator: Option<Arc<(Mutex<EmulSync>, Condvar)>>,
     thread_handle: Option<JoinHandle<()>>,
+    version: u32,
+    resolution: Option<[u32; 2]>,
 }
 
 impl Default for EmulMgr {
@@ -47,6 +45,8 @@ impl Default for EmulMgr {
         Self {
             emulator: None,
             thread_handle: None,
+            version: 0,
+            resolution: None,
         }
     }
 }
@@ -56,7 +56,7 @@ impl EmulMgr {
         if self.emulator.is_some() {
             let emul_opt = self.emulator.take();
             if let Some(emul_sync) = emul_opt {
-                let (e, c) = emul_sync.deref();
+                let (e, _) = emul_sync.deref();
                 e.lock().unwrap().stop = true;
                 let jh = self.thread_handle.take();
                 let _result = jh.ok_or("").unwrap().join();
@@ -68,9 +68,11 @@ impl EmulMgr {
             stop: false,
             pause: false,
         };
+        self.resolution = Some(emul_sync.emulator.resolution());
         let emul_rc = Arc::new((Mutex::new(emul_sync), Condvar::new()));
         self.thread_handle = Some(self.spawn_thread(&emul_rc));
         self.emulator = Some(emul_rc);
+        self.version += 1;
     }
 
     fn spawn_thread(&mut self, emulator: &Arc<(Mutex<EmulSync>, Condvar)>) -> JoinHandle<()> {
@@ -88,11 +90,36 @@ impl EmulMgr {
         })
     }
 
+    pub fn set_pause(&self, pause: bool) {
+        if let Some(emul_sync) = &self.emulator.as_deref() {
+            let (e, _) = emul_sync;
+            e.lock().unwrap().pause = pause;
+        }
+    }
+
+    pub fn is_paused(&self) -> bool {
+        if let Some(emul_sync) = &self.emulator.as_deref() {
+            let (e, _) = emul_sync;
+            return e.lock().unwrap().pause;
+        }
+        false
+    }
+
     pub fn video_buffer(&self) -> Result<Vec<u8>, ()> {
         if let Some(emul_rc) = &self.emulator {
-            let (e, c) = emul_rc.deref();
+            let (e, _) = emul_rc.deref();
             return Ok(e.lock().unwrap().emulator.video_buffer());
         }
         Err(())
     }
+
+    pub fn version(&self) -> u32 { self.version }
+
+    pub fn resolution(&self) -> Result<[u32; 2], ()> {
+        if let Some(resolution) = self.resolution {
+            return Ok(resolution);
+        }
+        Err(())
+    }
+
 }

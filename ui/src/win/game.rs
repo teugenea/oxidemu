@@ -16,14 +16,16 @@ use crate::render::SdlRender;
 
 pub struct GameWindow<'a> {
     texture_id: Option<TextureId>,
-    sdl_render: SdlRender<'a>,
+    sdl_render: Option<SdlRender<'a>>,
+    current_version: u32,
 }
 
 impl<'a> GameWindow<'a> {
     pub fn new() -> Self {
         Self {
             texture_id: None,
-            sdl_render: SdlRender::new([64, 32], 10),
+            sdl_render: None,
+            current_version: 0,
         }
     }
 
@@ -38,8 +40,12 @@ impl<'a> GameWindow<'a> {
             .position(gui_ctx.work_pos(), Condition::Always)
             .size(gui_ctx.work_size(), Condition::Always)
             .build(ui, || {
-                let width = self.sdl_render.scaled_size[0];
-                let height = self.sdl_render.scaled_size[1];
+                if self.should_update_render(emul) {
+                    self.create_render(emul, gui_ctx.render_scale());
+                }
+                let render = self.sdl_render.as_ref().ok_or("").unwrap();
+                let width = render.scaled_size()[0];
+                let height = render.scaled_size()[1];
                 self.update_texture(emul, gui_ctx).expect("Cannot update texture");
                 if let Some(texture_id) = self.texture_id {
                     Image::new(texture_id, [width as f32, height as f32]).build(ui);
@@ -61,9 +67,10 @@ impl<'a> GameWindow<'a> {
     }
     
     fn convert_buffer(&mut self, gui_ctx: &mut GuiCtx, buff: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let width = self.sdl_render.scaled_size[0];
-        let height = self.sdl_render.scaled_size[1];
-        let pixels = self.sdl_render.get_pixels(buff);
+        let render = self.sdl_render.as_mut().ok_or("").unwrap();
+        let width = render.scaled_size()[0];
+        let height = render.scaled_size()[1];
+        let pixels = render.get_pixels(buff);
         let raw = RawImage2d {
             data: Cow::Owned(pixels),
             width: width as u32,
@@ -94,5 +101,22 @@ impl<'a> GameWindow<'a> {
             self.texture_id = Some(texture_id);
         }
         Ok(())
+    }
+
+    fn should_update_render(&mut self, emul: &EmulMgr) -> bool {
+        let upd = self.sdl_render.is_none() || self.current_version != emul.version();
+        if upd {
+            self.current_version = emul.version();
+        }
+        upd
+    }
+
+    fn create_render(&mut self, emul: &EmulMgr, scale: u32) {
+        if let Some(render) = self.sdl_render.take() {
+            drop(render);
+        }
+        if let Ok(resolution) = emul.resolution() {
+            self.sdl_render = Some(SdlRender::new(resolution, scale));
+        }
     }
 }

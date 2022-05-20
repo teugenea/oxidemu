@@ -6,9 +6,10 @@ use sdl2::pixels::{PixelFormatEnum};
 
 pub struct SdlRender<'a> {
     canvas: Canvas<Surface<'a>>,
-    texture: Texture,
-    pub size: [u32; 2],
-    pub scaled_size: [u32; 2]
+    texture: Option<Texture>,
+    size: [u32; 2],
+    scaled_size: [u32; 2],
+    scale: u32,
 }
 
 impl<'a> SdlRender<'a> {
@@ -22,21 +23,26 @@ impl<'a> SdlRender<'a> {
             size[0], size[1]).expect("Cannot create SDL2 texture");
         Self {
             canvas: canvas,
-            texture: texture,
+            texture: Some(texture),
             size: size,
+            scale: scale,
             scaled_size: scaled_size,
         }
     }
 
-    pub fn get_pixels(&mut self, pixels: Vec<u8>) -> Vec<u8> {      
-        let update_result = self.texture.update(None, &pixels, 
+    pub fn get_pixels(&mut self, pixels: Vec<u8>) -> Vec<u8> {
+        if self.texture.is_none() {
+            panic!("Texture is none");
+        }
+        let texture = self.texture.as_mut().ok_or("Cannot get texture").unwrap();
+        let update_result = texture.update(None, &pixels, 
             mem::size_of::<u32>() * self.size[0] as usize);
         match update_result {
             Err(e) => panic!("Cannot update SDL2 texture: {}", e),
             _ => {}
         }
         self.canvas.clear();
-        let copy_result = self.canvas.copy(&self.texture, None, None);
+        let copy_result = self.canvas.copy(&texture, None, None);
         match copy_result {
             Err(e) => panic!("Cannot copy SDL2 texture: {}", e),
             _ => {}
@@ -45,4 +51,20 @@ impl<'a> SdlRender<'a> {
         self.canvas.read_pixels(None, PixelFormatEnum::RGBA8888).expect("Cannot read pixels")
     }
 
+    pub fn size(&self) -> &[u32; 2] { &self.size }
+
+    pub fn scale(&self) -> &u32 { &self.scale }
+
+    pub fn scaled_size(&self) -> &[u32; 2] { &self.scaled_size }
+
+}
+
+impl<'a> Drop for SdlRender<'a> {
+    fn drop(&mut self) {
+        let texture = self.texture.take();
+        match texture {
+            Some(t) => unsafe { t.destroy() },
+            _ => {}
+        }
+    }
 }
