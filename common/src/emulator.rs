@@ -1,4 +1,4 @@
-use crate::errors::EmulError;
+use crate::errors::{ EmulError, ErrorTopic, ErrorKind };
 use crate::input::InputKey;
 use std::ops::Deref;
 use std::sync::{ Arc, Condvar, Mutex };
@@ -105,21 +105,21 @@ impl EmulMgr {
         false
     }
 
-    pub fn video_buffer(&self) -> Result<Vec<u8>, ()> {
+    pub fn video_buffer(&self) -> Result<Vec<u8>, EmulError> {
         if let Some(emul_rc) = &self.emulator {
             let (e, _) = emul_rc.deref();
             return Ok(e.lock().unwrap().emulator.video_buffer());
         }
-        Err(())
+        Err(EmulError::new(ErrorKind::NotInitialized, ErrorTopic::Emulator))
     }
 
     pub fn version(&self) -> u32 { self.version }
 
-    pub fn resolution(&self) -> Result<[u32; 2], ()> {
+    pub fn resolution(&self) -> Result<[u32; 2], EmulError> {
         if let Some(resolution) = self.resolution {
             return Ok(resolution);
         }
-        Err(())
+        Err(EmulError::new(ErrorKind::NotInitialized, ErrorTopic::Emulator))
     }
 
 }

@@ -19,6 +19,7 @@ use std::time::Instant;
 mod gui_ctx;
 mod render;
 mod win;
+mod ui_error;
 
 use gui_ctx::*;
 

@@ -1,3 +1,4 @@
+use crate::ui_error::*;
 use imgui::Ui;
 use common::emulator::EmulMgr;
 use imgui::Window;
@@ -90,26 +91,39 @@ impl<'a> GameWindow<'a> {
                 tt.texture.write(rc, raw);
             }
         } else {
-            let gl_texture = Texture2d::new(gui_ctx.facade(), raw)?;
-            let texture = Texture {
-                texture: Rc::new(gl_texture),
-                sampler: SamplerBehavior {
-                    magnify_filter: MagnifySamplerFilter::Linear,
-                    minify_filter: MinifySamplerFilter::Linear,
-                    ..Default::default()
+            let gl_texture = Texture2d::new(gui_ctx.facade(), raw);
+            match gl_texture {
+                Err(e) => {
+                    let er = UiError {
+                        emul_error: None,
+                        source: Some(Box::new(e)),
+                    };
                 },
-            };
-            let texture_id = gui_ctx.textures().insert(texture);
-            self.texture_id = Some(texture_id);
+                Ok(r) => self.create_texture(gui_ctx, r),
+            }
         }
         Ok(())
     }
 
+    fn create_texture(&mut self, gui_ctx: &mut GuiCtx, gl_texture: Texture2d) {
+        let texture = Texture {
+            texture: Rc::new(gl_texture),
+            sampler: SamplerBehavior {
+                magnify_filter: MagnifySamplerFilter::Linear,
+                minify_filter: MinifySamplerFilter::Linear,
+                ..Default::default()
+            },
+        };
+        let texture_id = gui_ctx.textures().insert(texture);
+        self.texture_id = Some(texture_id);
+    }
+
     fn should_update_render(&mut self, emul: &EmulMgr) -> bool {
-        if let Some(render) = self.sdl_render.as_ref() {
-            return self.current_version != emul.version() || *render.scale() != self.current_scale;
+        match self.sdl_render.as_ref() {
+            Some(render) => self.current_version != emul.version() || *render.scale() != self.current_scale,
+            _ => true
         }
-        true
+        
     }
 
     fn create_render(&mut self, emul: &EmulMgr, scale: u32) {

@@ -1,4 +1,4 @@
-use crate::errors::{EmulError, EmulErrorKind};
+use crate::errors::{EmulError, ErrorKind, ErrorTopic};
 
 pub struct Ram {
     memory: Vec<u8>,
@@ -14,22 +14,18 @@ impl Ram {
         }
     }
 
-    fn op_read_topic(&self) -> String { String::from("Reading from RAM") }
-
-    fn op_write_topic(&self) -> String { String::from("Writing to RAM") }
-
     pub fn read_byte(&self, addr: usize) -> Result<u8, EmulError> {
         if self.size < addr {
-            let err = EmulErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 1};
-            return Err(EmulError::new(err, self.op_read_topic()));
+            let err = ErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 1};
+            return Err(EmulError::new(err, ErrorTopic::RamRead));
         }
         Ok(self.memory[addr])
     }
 
     pub fn read_word(&self, addr: usize) -> Result<u16, EmulError> {
         if self.size < addr || self.size < addr + 1 {
-            let err = EmulErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 2};
-            return Err(EmulError::new(err, self.op_read_topic()));
+            let err = ErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 2};
+            return Err(EmulError::new(err, ErrorTopic::RamRead));
         }
         let first_byte = self.memory[addr] as u16;
         let second_byte = self.memory[addr + 1] as u16;
@@ -40,8 +36,8 @@ impl Ram {
 
     pub fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), EmulError> {
         if addr > self.memory.len() {
-            let err = EmulErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 2};
-            return Err(EmulError::new(err, self.op_write_topic()));
+            let err = ErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 2};
+            return Err(EmulError::new(err, ErrorTopic::RamWrite));
         }
         Ok(self.memory[addr] = value)
     }
@@ -49,8 +45,8 @@ impl Ram {
     pub fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), EmulError> {
         let block_end = start_addr + data.len();
         if block_end > self.size {
-            let err = EmulErrorKind::OutOfBounds{addr: start_addr, max: self.memory.len(), size: 2};
-            return Err(EmulError::new(err, self.op_write_topic()));
+            let err = ErrorKind::OutOfBounds{addr: start_addr, max: self.memory.len(), size: data.len()};
+            return Err(EmulError::new(err, ErrorTopic::RamWrite));
         }
         let mut i = start_addr;
         for byte in data {
