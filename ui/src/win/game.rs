@@ -1,16 +1,15 @@
 use crate::ui_error::*;
-use imgui::Ui;
-use common::emulator::EmulMgr;
-use imgui::Window;
 use crate::GuiCtx;
+use common::emulator::EmulMgr;
 use glium::texture::{ClientFormat, RawImage2d};
 use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerBehavior};
 use glium::Texture2d;
+use imgui::Ui;
+use imgui::Window;
 use imgui::{Condition, Image, TextureId, WindowFlags};
 use imgui_glium_renderer::Texture;
 
 use std::borrow::Cow;
-use std::error::Error;
 use std::rc::Rc;
 
 use crate::render::SdlRender;
@@ -37,7 +36,7 @@ impl<'a> GameWindow<'a> {
         emul: &EmulMgr,
         ui: &Ui,
         gui_ctx: &mut GuiCtx,
-    ) {
+    ) -> Result<(), UiError> {
         Window::new("Game")
             .flags(WindowFlags::NO_TITLE_BAR | WindowFlags::NO_RESIZE)
             .position(gui_ctx.work_pos(), Condition::Always)
@@ -46,31 +45,46 @@ impl<'a> GameWindow<'a> {
                 if self.should_update_render(emul) {
                     self.create_render(emul, gui_ctx.state().render_scale);
                 }
-                let render = self.sdl_render.as_ref().ok_or("").unwrap();
+                let render = match &self.sdl_render {
+                    Some(r) => r,
+                    None => {
+                        return Err(UiError::new(None, None))
+                    }
+                };
                 let width = render.scaled_size()[0];
                 let height = render.scaled_size()[1];
-                self.update_texture(emul, gui_ctx).expect("Cannot update texture");
+                let pixels = match emul.video_buffer() {
+                    Ok(px) => px,
+                    Err(e) => {
+                        return Err(UiError::new(Some(e), None));
+                    }
+                };
+                match self.convert_buffer(gui_ctx, pixels) {
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    _ => {}
+                }
                 if let Some(texture_id) = self.texture_id {
                     Image::new(texture_id, [width as f32, height as f32]).build(ui);
                 }
-            });
+                let result: Result<(), UiError> = Ok(());
+                result
+            })
+            .unwrap()
     }
 
-    fn update_texture(
-        &mut self,
-        emul: &EmulMgr,
-        gui_ctx: &mut GuiCtx
-    ) -> Result<(), Box<dyn Error>> {
-
-        match emul.video_buffer() {
-            Err(e) => println!("Cannot"),
-            Ok(p) => self.convert_buffer(gui_ctx, p).unwrap()
-        }
-        Ok(())
-    }
-    
-    fn convert_buffer(&mut self, gui_ctx: &mut GuiCtx, buff: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let render = self.sdl_render.as_mut().ok_or("").unwrap();
+    fn convert_buffer(&mut self, gui_ctx: &mut GuiCtx, buff: Vec<u8>) -> Result<(), UiError> {
+        let render = match self.sdl_render.as_mut() {
+            Some(r) => r,
+            None => {
+                let er = UiError {
+                    emul_error: None,
+                    source: None,
+                };
+                return Err(er);
+            }
+        };
         let width = render.scaled_size()[0];
         let height = render.scaled_size()[1];
         let pixels = render.get_pixels(buff);
@@ -98,8 +112,12 @@ impl<'a> GameWindow<'a> {
                         emul_error: None,
                         source: Some(Box::new(e)),
                     };
-                },
-                Ok(r) => self.create_texture(gui_ctx, r),
+                    return Err(er);
+                }
+                Ok(r) => {
+                    self.create_texture(gui_ctx, r);
+                    return Ok(());
+                }
             }
         }
         Ok(())
@@ -120,10 +138,11 @@ impl<'a> GameWindow<'a> {
 
     fn should_update_render(&mut self, emul: &EmulMgr) -> bool {
         match self.sdl_render.as_ref() {
-            Some(render) => self.current_version != emul.version() || *render.scale() != self.current_scale,
-            _ => true
+            Some(render) => {
+                self.current_version != emul.version() || *render.scale() != self.current_scale
+            }
+            _ => true,
         }
-        
     }
 
     fn create_render(&mut self, emul: &EmulMgr, scale: u32) {
