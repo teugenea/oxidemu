@@ -110,7 +110,7 @@ impl EmulMgr {
             let (e, _) = emul_rc.deref();
             return Ok(e.lock().unwrap().emulator.video_buffer());
         }
-        Err(ErrorMsg::new(ErrorTopicId::Emulator, ErrorMsgId::NotInitialized))
+        Err(ErrorMsg::new(ErrorTopicId::Emulator.into(), ErrorMsgId::NotInitialized.into()))
     }
 
     pub fn version(&self) -> u32 { self.version }
@@ -119,7 +119,7 @@ impl EmulMgr {
         if let Some(resolution) = self.resolution {
             return Ok(resolution);
         }
-        Err(ErrorMsg::new(ErrorTopicId::Emulator, ErrorMsgId::NotInitialized))
+        Err(ErrorMsg::new(ErrorTopicId::Emulator.into(), ErrorMsgId::NotInitialized.into()))
     }
 
 }

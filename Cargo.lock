@@ -1322,6 +1322,7 @@ dependencies = [
  "imgui-winit-support",
  "json-gettext",
  "sdl2",
+ "strum_macros",
 ]
 
 [[package]]

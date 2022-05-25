@@ -1,6 +1,7 @@
-use crate::ui_error::*;
 use crate::GuiCtx;
 use common::emulator::EmulMgr;
+use crate::ui_error::*;
+use common::message::{ ErrorMsg, Msg };
 use glium::texture::{ClientFormat, RawImage2d};
 use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerBehavior};
 use glium::Texture2d;
@@ -36,7 +37,7 @@ impl<'a> GameWindow<'a> {
         emul: &EmulMgr,
         ui: &Ui,
         gui_ctx: &mut GuiCtx,
-    ) -> Result<(), UiError> {
+    ) -> Result<(), ErrorMsg> {
         Window::new("Game")
             .flags(WindowFlags::NO_TITLE_BAR | WindowFlags::NO_RESIZE)
             .position(gui_ctx.work_pos(), Condition::Always)
@@ -48,41 +49,29 @@ impl<'a> GameWindow<'a> {
                 let render = match &self.sdl_render {
                     Some(r) => r,
                     None => {
-                        return Err(UiError::new(None, None))
+                        let err = ErrorMsg::new(UiErrorTopicId::SdlRender.into(), UiErrorMsgId::NotInitialized.into());
+                        return Err(err);
                     }
                 };
                 let width = render.scaled_size()[0];
                 let height = render.scaled_size()[1];
-                let pixels = match emul.video_buffer() {
-                    Ok(px) => px,
-                    Err(e) => {
-                        return Err(UiError::new(Some(e), None));
-                    }
-                };
-                match self.convert_buffer(gui_ctx, pixels) {
-                    Err(e) => {
-                        return Err(e);
-                    }
-                    _ => {}
-                }
+                let pixels = emul.video_buffer()?;
+                self.convert_buffer(gui_ctx, pixels)?;
                 if let Some(texture_id) = self.texture_id {
                     Image::new(texture_id, [width as f32, height as f32]).build(ui);
                 }
-                let result: Result<(), UiError> = Ok(());
+                let result: Result<(), ErrorMsg> = Ok(());
                 result
             })
             .unwrap()
     }
 
-    fn convert_buffer(&mut self, gui_ctx: &mut GuiCtx, buff: Vec<u8>) -> Result<(), UiError> {
+    fn convert_buffer(&mut self, gui_ctx: &mut GuiCtx, buff: Vec<u8>) -> Result<(), ErrorMsg> {
         let render = match self.sdl_render.as_mut() {
             Some(r) => r,
             None => {
-                let er = UiError {
-                    emul_error: None,
-                    source: None,
-                };
-                return Err(er);
+                let err = ErrorMsg::new(UiErrorTopicId::SdlRender.into(), UiErrorMsgId::NotInitialized.into());
+                return Err(err);
             }
         };
         let width = render.scaled_size()[0];
@@ -108,11 +97,8 @@ impl<'a> GameWindow<'a> {
             let gl_texture = Texture2d::new(gui_ctx.facade(), raw);
             match gl_texture {
                 Err(e) => {
-                    let er = UiError {
-                        emul_error: None,
-                        source: Some(Box::new(e)),
-                    };
-                    return Err(er);
+                    let err = ErrorMsg::new(UiErrorTopicId::SdlRender.into(), UiErrorMsgId::NotInitialized.into());
+                    return Err(err);
                 }
                 Ok(r) => {
                     self.create_texture(gui_ctx, r);

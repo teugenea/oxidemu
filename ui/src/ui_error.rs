@@ -1,33 +1,11 @@
-use std::fmt::{ Formatter, Display };
-use std::error::Error;
-use common::message::*;
+use strum_macros::IntoStaticStr;
 
-#[derive(Debug)]
-pub struct UiError {
-    pub emul_error: Option<ErrorMsg>,
-    pub source: Option<Box<dyn Error>>,
+#[derive(Debug, IntoStaticStr)]
+pub enum UiErrorMsgId {
+    NotInitialized,
 }
 
-impl UiError {
-    pub fn new(emul_error: Option<ErrorMsg>, source: Option<Box<dyn Error>>) -> Self {
-        Self {
-            emul_error: emul_error,
-            source: source,
-        }
-    }
-}
-
-impl Display for UiError {
-    fn fmt(&self, err: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(err, "")
-    }
-}
-
-impl Error for UiError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match &self.source {
-            Some(err) => Some(err.as_ref()),
-            _ => None
-        }
-    }
+#[derive(Debug, IntoStaticStr)]
+pub enum UiErrorTopicId {
+    SdlRender,
 }

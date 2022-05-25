@@ -166,7 +166,7 @@ impl Chip8 {
             0xF00A => { self.op_Fx0A(); Ok(res) },
             0xF01E => { self.op_Fx1E(); Ok(res) },
             y => {
-                let err = ErrorMsg::new(ErrorTopicId::Emulator, ErrorMsgId::UnknownInstruction)
+                let err = ErrorMsg::new(ErrorTopicId::Emulator.into(), ErrorMsgId::UnknownInstruction.into())
                     .add_param(y.to_string());
                 Err(Box::new(err))
             }

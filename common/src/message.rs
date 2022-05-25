@@ -48,10 +48,10 @@ pub struct ErrorMsg {
 }
 
 impl ErrorMsg {
-    pub fn new(topic_id: ErrorTopicId, msg_id: ErrorMsgId) -> Self {
+    pub fn new(topic_id: &'static str, msg_id: &'static str) -> Self {
         Self {
-            msg_id: msg_id.into(),
-            topic_id: topic_id.into(),
+            msg_id,
+            topic_id,
             params: None,
             source: None,
         }

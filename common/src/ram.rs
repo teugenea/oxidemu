@@ -17,7 +17,7 @@ impl Ram {
     pub fn read_byte(&self, addr: usize) -> Result<u8, Box<dyn Msg>> {
         if self.size < addr {
             //let err = ErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 1};
-            let err = ErrorMsg::new(ErrorTopicId::RamRead, ErrorMsgId::OutOfBounds)
+            let err = ErrorMsg::new(ErrorTopicId::RamRead.into(), ErrorMsgId::OutOfBounds.into())
                 .add_param(addr.to_string())
                 .add_param(self.memory.len().to_string());
             return Err(Box::new(err));
@@ -28,7 +28,7 @@ impl Ram {
     pub fn read_word(&self, addr: usize) -> Result<u16, Box<dyn Msg>> {
         if self.size < addr || self.size < addr + 1 {
             //let err = ErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 2};
-            let err = ErrorMsg::new(ErrorTopicId::RamRead, ErrorMsgId::OutOfBounds)
+            let err = ErrorMsg::new(ErrorTopicId::RamRead.into(), ErrorMsgId::OutOfBounds.into())
                 .add_param(addr.to_string())
                 .add_param(self.memory.len().to_string());
             return Err(Box::new(err));
@@ -43,7 +43,7 @@ impl Ram {
     pub fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), Box<dyn Msg>> {
         if addr > self.memory.len() {
             // let err = ErrorKind::OutOfBounds{addr, max: self.memory.len(), size: 2};
-            let err = ErrorMsg::new(ErrorTopicId::RamWrite, ErrorMsgId::OutOfBounds)
+            let err = ErrorMsg::new(ErrorTopicId::RamWrite.into(), ErrorMsgId::OutOfBounds.into())
                 .add_param(addr.to_string())
                 .add_param(self.memory.len().to_string());
             return Err(Box::new(err));
@@ -54,7 +54,7 @@ impl Ram {
     pub fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), Box<dyn Msg>> {
         let block_end = start_addr + data.len();
         if block_end > self.size {
-            let err = ErrorMsg::new(ErrorTopicId::RamRead, ErrorMsgId::OutOfBounds)
+            let err = ErrorMsg::new(ErrorTopicId::RamRead.into(), ErrorMsgId::OutOfBounds.into())
                 .add_param(start_addr.to_string())
                 .add_param(self.memory.len().to_string())
                 .add_param(data.len().to_string());
