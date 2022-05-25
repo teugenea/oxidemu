@@ -1,15 +1,15 @@
 use std::fmt::{ Formatter, Display };
 use std::error::Error;
-use common::errors::*;
+use common::message::*;
 
 #[derive(Debug)]
 pub struct UiError {
-    pub emul_error: Option<EmulError>,
+    pub emul_error: Option<ErrorMsg>,
     pub source: Option<Box<dyn Error>>,
 }
 
 impl UiError {
-    pub fn new(emul_error: Option<EmulError>, source: Option<Box<dyn Error>>) -> Self {
+    pub fn new(emul_error: Option<ErrorMsg>, source: Option<Box<dyn Error>>) -> Self {
         Self {
             emul_error: emul_error,
             source: source,

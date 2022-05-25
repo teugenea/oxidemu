@@ -1,4 +1,4 @@
-use crate::errors::{ EmulError, ErrorTopic, ErrorKind };
+use crate::message::*;
 use crate::input::InputKey;
 use std::ops::Deref;
 use std::sync::{ Arc, Condvar, Mutex };
@@ -21,7 +21,7 @@ impl Default for CycleResult {
 
 pub trait Emulator {
     fn video_buffer(&self) -> Vec<u8>;
-    fn cycle(&mut self) -> Result<CycleResult, EmulError>;
+    fn cycle(&mut self) -> Result<CycleResult, Box<dyn Msg>>;
     fn process_input(&mut self, key: InputKey);
     fn load_rom(&mut self, file_name: &String);
     fn resolution(&self) -> [u32; 2];
@@ -105,21 +105,21 @@ impl EmulMgr {
         false
     }
 
-    pub fn video_buffer(&self) -> Result<Vec<u8>, EmulError> {
+    pub fn video_buffer(&self) -> Result<Vec<u8>, ErrorMsg> {
         if let Some(emul_rc) = &self.emulator {
             let (e, _) = emul_rc.deref();
             return Ok(e.lock().unwrap().emulator.video_buffer());
         }
-        Err(EmulError::new(ErrorKind::NotInitialized, ErrorTopic::Emulator))
+        Err(ErrorMsg::new(ErrorTopicId::Emulator, ErrorMsgId::NotInitialized))
     }
 
     pub fn version(&self) -> u32 { self.version }
 
-    pub fn resolution(&self) -> Result<[u32; 2], EmulError> {
+    pub fn resolution(&self) -> Result<[u32; 2], ErrorMsg> {
         if let Some(resolution) = self.resolution {
             return Ok(resolution);
         }
-        Err(EmulError::new(ErrorKind::NotInitialized, ErrorTopic::Emulator))
+        Err(ErrorMsg::new(ErrorTopicId::Emulator, ErrorMsgId::NotInitialized))
     }
 
 }

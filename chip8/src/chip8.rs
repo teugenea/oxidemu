@@ -1,6 +1,6 @@
 extern crate common;
 
-use common::errors::*;
+use common::message::*;
 use common::ram::Ram;
 use common::vram::Vram;
 use common::utils;
@@ -103,7 +103,7 @@ impl Chip8 {
 
     fn get_rand() -> u8 { thread_rng().gen_range(0..256) as u8}
 
-    fn do_cycle(&mut self) -> Result<CycleResult, EmulError> {
+    fn do_cycle(&mut self) -> Result<CycleResult, Box<dyn Msg>> {
         let opcode = self.memory.read_word(self.pc as usize)?;
         self.pc += 2;
         self.opcode = opcode;
@@ -126,7 +126,7 @@ impl Chip8 {
         }
     }
 
-    fn exec_intruction(&mut self) -> Result<CycleResult, EmulError> {
+    fn exec_intruction(&mut self) -> Result<CycleResult, Box<dyn Msg>> {
         self.cnt += 1;
         let mut res = CycleResult::default();
         res.cycle_count = self.cnt;
@@ -166,7 +166,9 @@ impl Chip8 {
             0xF00A => { self.op_Fx0A(); Ok(res) },
             0xF01E => { self.op_Fx1E(); Ok(res) },
             y => {
-                Err(EmulError::new(ErrorKind::UnknownInstruction, ErrorTopic::Emulator))
+                let err = ErrorMsg::new(ErrorTopicId::Emulator, ErrorMsgId::UnknownInstruction)
+                    .add_param(y.to_string());
+                Err(Box::new(err))
             }
         }
     }
@@ -476,7 +478,7 @@ impl Emulator for Chip8 {
         self.video_memory.video_8()
     }
 
-    fn cycle(&mut self) -> Result<CycleResult, EmulError> {
+    fn cycle(&mut self) -> Result<CycleResult, Box<dyn Msg>> {
         if !self.active {
             return Ok(CycleResult::default());
         }
