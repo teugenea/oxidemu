@@ -50,10 +50,8 @@ pub struct Chip8 {
     delay_timer: u8,
     sound_timer: u8,
     keypad: Vec<u8>,
-    last_cycle_time: u128,
-    cycle_delay: u128,
     active: bool,
-    cnt: u32,
+    cycle_count: u128,
 }
 
 impl Chip8 {
@@ -71,10 +69,8 @@ impl Chip8 {
             delay_timer: 0,
             sound_timer: 0,
             keypad: vec![0u8; KEY_COUNT],
-            last_cycle_time: Chip8::get_time(),
-            cycle_delay: 0,
             active: false,
-            cnt: 0,
+            cycle_count: 0,
         }
     }
 
@@ -127,9 +123,9 @@ impl Chip8 {
     }
 
     fn exec_intruction(&mut self) -> Result<CycleResult, Box<dyn Msg>> {
-        self.cnt += 1;
+        self.cycle_count += 1;
         let mut res = CycleResult::default();
-        res.cycle_count = self.cnt;
+        res.cycle_count = self.cycle_count;
         match Chip8::decode(&self.opcode) {
             0x000E => { self.op_00ee(); Ok(res) },
             0x1000 => { self.op_1nnn(); Ok(res) },

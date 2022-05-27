@@ -4,10 +4,11 @@ use std::ops::Deref;
 use std::sync::{ Arc, Condvar, Mutex };
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::{SystemTime, Duration};
 
 pub struct CycleResult {
     pub video_buff_changed: bool,
-    pub cycle_count: u32,
+    pub cycle_count: u128,
 }
 
 impl Default for CycleResult {
@@ -66,7 +67,7 @@ impl EmulMgr {
         let emul_sync = EmulSync {
             emulator,
             stop: false,
-            pause: false,
+            pause: false
         };
         self.resolution = Some(emul_sync.emulator.resolution());
         let emul_rc = Arc::new((Mutex::new(emul_sync), Condvar::new()));
@@ -84,7 +85,9 @@ impl EmulMgr {
                 if emul_sync.stop {
                     break;
                 }
-                emul_sync = c.wait_while(emul_sync, |es| es.pause).unwrap();
+                emul_sync = c.wait_while(emul_sync, |es| {
+                    es.pause 
+                }).unwrap();
                 let _res = emul_sync.emulator.cycle();
             }
         })
