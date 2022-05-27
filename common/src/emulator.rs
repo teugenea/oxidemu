@@ -113,6 +113,13 @@ impl EmulMgr {
         Err(ErrorMsg::new(ErrorTopicId::Emulator.into(), ErrorMsgId::NotInitialized.into()))
     }
 
+    pub fn process_input(&self, key: InputKey) {
+        if let Some(emul_rc) = &self.emulator {
+            let (e, _) = emul_rc.deref();
+            e.lock().unwrap().emulator.process_input(key);
+        }
+    }
+
     pub fn version(&self) -> u32 { self.version }
 
     pub fn resolution(&self) -> Result<[u32; 2], ErrorMsg> {

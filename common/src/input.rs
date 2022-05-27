@@ -1,9 +1,11 @@
 
+#[derive(Debug)]
 pub enum InputDevice {
     Keyboard(u32),
     Gamepad(u32),
 }
 
+#[derive(Debug)]
 pub struct InputKey {
     pub device: InputDevice,
     pub key_code: u32,

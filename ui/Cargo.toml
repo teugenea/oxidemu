@@ -11,6 +11,7 @@ imgui-glium-renderer = "0.8.2"
 sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
 json-gettext = "4.0.3"
 strum_macros = "0.24.0"
+gilrs = "0.9.0"
 
 chip8 = { path = "../chip8" }
 common = { path = "../common" }

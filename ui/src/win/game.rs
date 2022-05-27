@@ -1,7 +1,7 @@
 use crate::GuiCtx;
 use common::emulator::EmulMgr;
 use crate::ui_error::*;
-use common::message::{ ErrorMsg, Msg };
+use common::message::{ ErrorMsg };
 use glium::texture::{ClientFormat, RawImage2d};
 use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerBehavior};
 use glium::Texture2d;
@@ -97,7 +97,8 @@ impl<'a> GameWindow<'a> {
             let gl_texture = Texture2d::new(gui_ctx.facade(), raw);
             match gl_texture {
                 Err(e) => {
-                    let err = ErrorMsg::new(UiErrorTopicId::SdlRender.into(), UiErrorMsgId::NotInitialized.into());
+                    let err = ErrorMsg::new(UiErrorTopicId::SdlRender.into(), UiErrorMsgId::NotInitialized.into())
+                        .set_source(Box::new(e));
                     return Err(err);
                 }
                 Ok(r) => {

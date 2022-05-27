@@ -485,7 +485,17 @@ impl Emulator for Chip8 {
         self.do_cycle()
     }
 
-    fn process_input(&mut self, key: InputKey) { todo!() }
+    fn process_input(&mut self, key: InputKey) {
+        println!("{:?}", key);
+        let pressed = key.pressed as u8;
+        match key.key_code {
+            2 => self.keypad[0] = pressed,
+            3 => self.keypad[1] = pressed,
+            4 => self.keypad[2] = pressed,
+            5 => self.keypad[3] = pressed,
+            _ => {}
+        }
+    }
 
     fn load_rom(&mut self, file_name: &String) {
         self.load_rom(file_name);
