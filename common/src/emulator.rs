@@ -1,21 +1,19 @@
-use crate::message::*;
 use crate::input::InputKey;
-use std::ops::Deref;
-use std::sync::{ Arc, Condvar, Mutex };
-use std::thread;
-use std::thread::JoinHandle;
-use std::time::{SystemTime, Duration};
+use crate::message::*;
+use std::time::{Duration, SystemTime};
 
 pub struct CycleResult {
     pub video_buff_changed: bool,
-    pub cycle_count: u128,
+    pub total_cycle_count: u128,
+    pub last_cycle_count: u128,
 }
 
 impl Default for CycleResult {
     fn default() -> Self {
         Self {
             video_buff_changed: false,
-            cycle_count: 0,
+            total_cycle_count: 0,
+            last_cycle_count: 0,
         }
     }
 }
@@ -26,110 +24,90 @@ pub trait Emulator {
     fn process_input(&mut self, key: InputKey);
     fn load_rom(&mut self, file_name: &String);
     fn resolution(&self) -> [u32; 2];
-}
-
-struct EmulSync {
-    emulator: Box<dyn Emulator + Send>,
-    stop: bool,
-    pause: bool,
+    fn cycles_in_sec(&self) -> u64;
 }
 
 pub struct EmulMgr {
-    emulator: Option<Arc<(Mutex<EmulSync>, Condvar)>>,
-    thread_handle: Option<JoinHandle<()>>,
+    emulator: Option<Box<dyn Emulator>>,
     version: u32,
-    resolution: Option<[u32; 2]>,
+    pause: bool,
 }
 
 impl Default for EmulMgr {
     fn default() -> Self {
         Self {
             emulator: None,
-            thread_handle: None,
             version: 0,
-            resolution: None,
+            pause: false,
         }
     }
 }
 
 impl EmulMgr {
-    pub fn set_emulator(&mut self, emulator: Box<dyn Emulator + Send>) {
-        if self.emulator.is_some() {
-            let emul_opt = self.emulator.take();
-            if let Some(emul_sync) = emul_opt {
-                let (e, _) = emul_sync.deref();
-                e.lock().unwrap().stop = true;
-                let jh = self.thread_handle.take();
-                let _result = jh.ok_or("").unwrap().join();
-            }
-        }
-
-        let emul_sync = EmulSync {
-            emulator,
-            stop: false,
-            pause: false
-        };
-        self.resolution = Some(emul_sync.emulator.resolution());
-        let emul_rc = Arc::new((Mutex::new(emul_sync), Condvar::new()));
-        self.thread_handle = Some(self.spawn_thread(&emul_rc));
-        self.emulator = Some(emul_rc);
+    pub fn set_emulator(&mut self, emulator: Box<dyn Emulator>) {
+        self.emulator.replace(emulator);
         self.version += 1;
     }
 
-    fn spawn_thread(&mut self, emulator: &Arc<(Mutex<EmulSync>, Condvar)>) -> JoinHandle<()> {
-        let emul_rc = Arc::clone(emulator);
-        thread::spawn(move || {
-            loop {
-                let (e, c) = emul_rc.deref();
-                let mut emul_sync = e.lock().unwrap();
-                if emul_sync.stop {
-                    break;
-                }
-                emul_sync = c.wait_while(emul_sync, |es| {
-                    es.pause 
-                }).unwrap();
-                let _res = emul_sync.emulator.cycle();
+    pub fn cycle(&mut self) -> Result<CycleResult, Box<dyn Msg>> {
+        if let Some(emul) = self.emulator.as_mut() {
+            if !self.pause {
+                return emul.cycle();
             }
-        })
+        }
+        let err = ErrorMsg::new(
+            ErrorTopicId::Emulator.into(),
+            ErrorMsgId::NotInitialized.into(),
+        );
+        Err(Box::new(err))
     }
 
-    pub fn set_pause(&self, pause: bool) {
-        if let Some(emul_sync) = &self.emulator.as_deref() {
-            let (e, _) = emul_sync;
-            e.lock().unwrap().pause = pause;
+    pub fn set_pause(&mut self, pause: bool) {
+        if self.emulator.is_some() {
+            self.pause = pause;
         }
     }
 
     pub fn is_paused(&self) -> bool {
-        if let Some(emul_sync) = &self.emulator.as_deref() {
-            let (e, _) = emul_sync;
-            return e.lock().unwrap().pause;
-        }
-        false
+        self.pause
     }
 
-    pub fn video_buffer(&self) -> Result<Vec<u8>, ErrorMsg> {
-        if let Some(emul_rc) = &self.emulator {
-            let (e, _) = emul_rc.deref();
-            return Ok(e.lock().unwrap().emulator.video_buffer());
+    pub fn video_buffer(&self) -> Result<Vec<u8>, Box<dyn Msg>> {
+        if let Some(emul) = &self.emulator {
+            return Ok(emul.video_buffer());
         }
-        Err(ErrorMsg::new(ErrorTopicId::Emulator.into(), ErrorMsgId::NotInitialized.into()))
+        Err(self.not_init_error())
     }
 
-    pub fn process_input(&self, key: InputKey) {
-        if let Some(emul_rc) = &self.emulator {
-            let (e, _) = emul_rc.deref();
-            e.lock().unwrap().emulator.process_input(key);
+    pub fn process_input(&mut self, key: InputKey) {
+        if let Some(emul) = self.emulator.as_mut() {
+            emul.process_input(key);
         }
     }
 
-    pub fn version(&self) -> u32 { self.version }
-
-    pub fn resolution(&self) -> Result<[u32; 2], ErrorMsg> {
-        if let Some(resolution) = self.resolution {
-            return Ok(resolution);
-        }
-        Err(ErrorMsg::new(ErrorTopicId::Emulator.into(), ErrorMsgId::NotInitialized.into()))
+    pub fn version(&self) -> u32 {
+        self.version
     }
 
+    pub fn resolution(&self) -> Result<[u32; 2], Box<dyn Msg>> {
+        if let Some(emul) = &self.emulator {
+            return Ok(emul.resolution());
+        }
+        Err(self.not_init_error())
+    }
+
+    pub fn cycles_in_sec(&self) -> Result<u64, Box<dyn Msg>> {
+        if let Some(emul) = &self.emulator {
+            return Ok(emul.cycles_in_sec());
+        }
+        Err(self.not_init_error())
+    }
+
+    fn not_init_error(&self) -> Box<dyn Msg> {
+        let err = ErrorMsg::new(
+            ErrorTopicId::Emulator.into(),
+            ErrorMsgId::NotInitialized.into(),
+        );
+        Box::new(err)
+    }
 }

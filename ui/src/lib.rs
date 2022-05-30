@@ -15,7 +15,7 @@ use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, TextureId, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
-use std::time::Instant;
+use std::time::{ Instant, Duration };
 #[macro_use]
 extern crate json_gettext;
 
@@ -48,7 +48,7 @@ impl System {
             mut imgui,
             mut platform,
             mut renderer,
-            emul,
+            mut emul,
             ..
         } = self;
 
@@ -58,6 +58,7 @@ impl System {
         let mut state = UiState::default();
         let loc = init_local();
         let mut gilrs = Gilrs::new().unwrap();
+        let cycles_in_ms = 1.0 / emul.cycles_in_sec().unwrap() as f64 * Duration::from_secs(1).as_millis() as f64;
 
         event_loop.run(move |event, _, control_flow| {
             if let Some(gilrs::Event { id, event, time }) = gilrs.next_event() {
@@ -81,8 +82,18 @@ impl System {
                         start = std::time::Instant::now();
                     }
                     let now = Instant::now();
-                    imgui.io_mut().update_delta_time(now - last_frame);
+                    let delta_time = now - last_frame;
+                    imgui.io_mut().update_delta_time(delta_time);
                     last_frame = now;
+
+                    let cycle_count = (delta_time.as_millis() as f64 / cycles_in_ms).round() as u128;
+                    let mut cnt = 0u128;
+                    while cnt <= cycle_count {
+                        match emul.cycle() {
+                            Ok(res) => cnt += res.last_cycle_count,
+                            Err(_) => {}
+                        }
+                    }
                 }
                 Event::MainEventsCleared => {
                     let gl_window = display.gl_window();

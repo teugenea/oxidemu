@@ -125,7 +125,8 @@ impl Chip8 {
     fn exec_intruction(&mut self) -> Result<CycleResult, Box<dyn Msg>> {
         self.cycle_count += 1;
         let mut res = CycleResult::default();
-        res.cycle_count = self.cycle_count;
+        res.total_cycle_count = self.cycle_count;
+        res.last_cycle_count = 1;
         match Chip8::decode(&self.opcode) {
             0x000E => { self.op_00ee(); Ok(res) },
             0x1000 => { self.op_1nnn(); Ok(res) },
@@ -499,6 +500,10 @@ impl Emulator for Chip8 {
 
     fn resolution(&self) -> [u32; 2] {
         [64, 32]
+    }
+
+    fn cycles_in_sec(&self) -> u64 {
+        500
     }
 }
 
