@@ -1,23 +1,21 @@
+use std::collections::HashMap;
 
-#[derive(Debug)]
-pub enum InputDevice {
-    Keyboard(u32),
-    Gamepad(u32),
+pub struct InputMap {
+    input_map: HashMap<u32, u32>,
 }
 
-#[derive(Debug)]
-pub struct InputKey {
-    pub device: InputDevice,
-    pub key_code: u32,
-    pub pressed: bool,
-}
-
-impl InputKey {
-    pub fn new(device: InputDevice, key_code: u32, pressed: bool) -> Self {
+impl Default for InputMap {
+    fn default() -> Self {
         Self {
-            device: device,
-            key_code: key_code,
-            pressed: pressed,
+            input_map: Default::default()
         }
     }
+}
+
+impl InputMap {
+    
+}
+
+pub struct InputMgr {
+    
 }

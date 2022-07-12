@@ -61,12 +61,8 @@ impl System {
         let cycles_in_ms = 1.0 / emul.cycles_in_sec().unwrap() as f64 * Duration::from_secs(1).as_millis() as f64;
 
         event_loop.run(move |event, _, control_flow| {
+
             if let Some(gilrs::Event { id, event, time }) = gilrs.next_event() {
-                let gpad_key = InputKey {
-                    device: InputDevice::Gamepad(0),
-                    key_code: 0,
-                    pressed: true,
-                };
                 println!("{:?}: {:?}", id, event);
             }
             
@@ -138,18 +134,13 @@ impl System {
                 Event::WindowEvent {
                     event:
                         WindowEvent::KeyboardInput {
-                            device_id,
+                            device_id: _,
                             input,
-                            is_synthetic,
+                            is_synthetic: _,
                         },
                     ..
                 } => {
-                    let key = InputKey {
-                        device: InputDevice::Keyboard(0),
-                        key_code: input.scancode,
-                        pressed: input.state == ElementState::Pressed,
-                    };
-                    emul.process_input(key);
+                    
                 }
                 event => {
                     let gl_window = display.gl_window();

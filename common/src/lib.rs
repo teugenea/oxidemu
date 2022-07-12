@@ -4,6 +4,3 @@ pub mod utils;
 pub mod input;
 pub mod emulator;
 pub mod message;
-
-#[cfg(test)]
-mod tests;

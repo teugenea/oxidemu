@@ -7,3 +7,5 @@ edition = "2021"
 common = { path = "common" }
 chip8 = { path = "chip8" }
 ui = { path = "ui" }
+
+# set env var RUSTFLAGS='-L path/to/dir/SDL.lib' before build

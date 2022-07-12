@@ -69,11 +69,11 @@ impl<'a> GuiCtx<'a> {
     }
 
     pub fn work_pos(&self) -> [f32; 2] {
-        self.work_pos.clone()
+        self.work_pos
     }
 
     pub fn work_size(&self) -> [f32; 2] {
-        self.work_size.clone()
+        self.work_size
     }
 
 }

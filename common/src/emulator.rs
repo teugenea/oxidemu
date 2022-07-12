@@ -1,6 +1,4 @@
-use crate::input::InputKey;
 use crate::message::*;
-use std::time::{Duration, SystemTime};
 
 pub struct CycleResult {
     pub video_buff_changed: bool,
@@ -21,7 +19,7 @@ impl Default for CycleResult {
 pub trait Emulator {
     fn video_buffer(&self) -> Vec<u8>;
     fn cycle(&mut self) -> Result<CycleResult, Box<dyn Msg>>;
-    fn process_input(&mut self, key: InputKey);
+    fn process_input(&mut self, emul_key: u32, pressed: bool);
     fn load_rom(&mut self, file_name: &String);
     fn resolution(&self) -> [u32; 2];
     fn cycles_in_sec(&self) -> u64;
@@ -79,9 +77,9 @@ impl EmulMgr {
         Err(self.not_init_error())
     }
 
-    pub fn process_input(&mut self, key: InputKey) {
+    pub fn process_input(&mut self, emul_key: u32, pressed: bool) {
         if let Some(emul) = self.emulator.as_mut() {
-            emul.process_input(key);
+            emul.process_input(emul_key, pressed);
         }
     }
 
