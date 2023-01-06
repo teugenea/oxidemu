@@ -673,9 +673,9 @@ dependencies = [
 
 [[package]]
 name = "json-gettext"
-version = "4.0.3"
+version = "4.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89152eacc36cc7db9986219c233b233b85f80f63bf21908eaa981a67a9800aee"
+checksum = "66896a8d212e6f18e96dcabd99f29bd39787e0ef9cf9351e919e577d23efa579"
 dependencies = [
  "manifest-dir-macros",
  "regex",
@@ -981,15 +981,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "88cfece6e95d2e717e0872a7f53a8684712ad13822a7979bc760b9c77ec0013b"
 dependencies = [
  "shared_library",
-]
-
-[[package]]
-name = "oxidemu"
-version = "0.1.0"
-dependencies = [
- "chip8",
- "common",
- "ui",
 ]
 
 [[package]]
@@ -1315,6 +1306,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "starter"
+version = "0.1.0"
+dependencies = [
+ "chip8",
+ "common",
+ "ui",
+]
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1322,9 +1322,9 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "strum_macros"
-version = "0.24.0"
+version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6878079b17446e4d3eba6192bb0a2950d5b14f0ed8424b852310e5a94345d0ef"
+checksum = "1e385be0d24f186b4ce2f9982191e7101bb737312ad61c1f2f984f34bcf85d59"
 dependencies = [
  "heck",
  "proc-macro2",

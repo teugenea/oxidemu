@@ -1,11 +1,21 @@
-[package]
-name = "oxidemu"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [ "starter", "common", "chip8", "ui" ]
 
-[dependencies]
-common = { path = "common" }
-chip8 = { path = "chip8" }
-ui = { path = "ui" }
+[workspace.package]
+edition = "2022"
+# name = "oxidemu"
+# version = "0.1.0"
+
+[workspace.dependencies]
+rand = "0.8.5"
+strum_macros = "0.24.3"
+
+glium = { version = "0.32.1", default-features = true }
+imgui = "0.9.0"
+imgui-winit-support = "0.9.0"
+imgui-glium-renderer = "0.9.0"
+sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
+json-gettext = "4.0.5"
+gilrs = "0.10.1"
 
 # set env var RUSTFLAGS='-L path/to/dir/SDL.lib' before build
