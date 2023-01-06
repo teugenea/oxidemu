@@ -13,5 +13,4 @@ json-gettext = { workspace = true }
 strum_macros = { workspace = true }
 gilrs = { workspace = true }
 
-chip8 = { path = "../chip8" }
-common = { path = "../common" }
+emulation = { path = "../emulation" }

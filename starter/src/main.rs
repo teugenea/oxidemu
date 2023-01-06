@@ -1,5 +1,5 @@
-use common::emulator::EmulMgr;
-use chip8::chip8::Chip8;
+use emulation::common::emulator::EmulMgr;
+use emulation::chip8::chip8::Chip8;
 
 fn main() {
     let mut chip = Chip8::new();

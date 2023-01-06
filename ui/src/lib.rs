@@ -1,6 +1,6 @@
 use crate::win::main::MainWindow;
-use common::emulator::EmulMgr;
-use common::input::*;
+use emulation::common::emulator::EmulMgr;
+use emulation::common::input::*;
 use gilrs::{Button, Gilrs};
 use glium::backend::Facade;
 use glium::glutin;

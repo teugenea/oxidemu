@@ -1,7 +1,7 @@
 use crate::GuiCtx;
-use common::emulator::EmulMgr;
+use emulation::common::emulator::EmulMgr;
 use crate::ui_error::*;
-use common::message::{ ErrorMsg, Msg };
+use emulation::common::message::{ ErrorMsg, Msg };
 use glium::texture::{ClientFormat, RawImage2d};
 use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerBehavior};
 use glium::Texture2d;

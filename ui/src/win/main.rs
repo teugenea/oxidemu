@@ -1,5 +1,5 @@
 use imgui::Ui;
-use common::emulator::EmulMgr;
+use emulation::common::emulator::EmulMgr;
 use crate::GuiCtx;
 use imgui::MenuItem;
 use super::game::GameWindow;

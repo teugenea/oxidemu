@@ -1,5 +1,5 @@
 [workspace]
-members = [ "starter", "common", "chip8", "ui" ]
+members = [ "starter", "emulation", "ui" ]
 
 [workspace.package]
 edition = "2022"

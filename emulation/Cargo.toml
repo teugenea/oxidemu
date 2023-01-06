@@ -1,10 +1,10 @@
 [package]
-name = "starter"
+name = "emulation"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ui = { path = "../ui" }
-emulation = { path = "../emulation" }
+strum_macros = { workspace = true }
+rand = { workspace = true }
