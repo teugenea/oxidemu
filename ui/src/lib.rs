@@ -120,7 +120,7 @@ impl System {
                     let mut target = display.draw();
                     target.clear_color_srgb(0.177, 0.177, 0.177, 1.0);
                     platform.prepare_render(&ui, gl_window.window());
-                    let draw_data = ui.render();
+                    let draw_data = Context::render(&mut imgui);
                     renderer
                         .render(&mut target, draw_data)
                         .expect("Rendering failed");

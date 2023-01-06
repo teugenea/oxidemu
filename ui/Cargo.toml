@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-glium = { version = "0.30", default-features = true }
-imgui = "0.8.2"
-imgui-winit-support = "0.8.2"
-imgui-glium-renderer = "0.8.2"
+glium = { version = "0.32.1", default-features = true }
+imgui = "0.9.0"
+imgui-winit-support = "0.9.0"
+imgui-glium-renderer = "0.9.0"
 sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
 json-gettext = "4.0.3"
 strum_macros = "0.24.0"
-gilrs = "0.9.0"
+gilrs = "0.10.1"
 
 chip8 = { path = "../chip8" }
 common = { path = "../common" }

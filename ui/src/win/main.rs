@@ -24,9 +24,9 @@ impl<'a> MainWindow<'a> {
     fn main_menu(&mut self, ui: &Ui, gui_ctx: &GuiCtx)  {
         if let Some(menu_bar) = ui.begin_main_menu_bar() {
             if let Some(menu) = ui.begin_menu("File") {
-                MenuItem::new("Open").build(ui);
+                ui.menu_item("Open");
                 ui.separator();
-                MenuItem::new("Exit").build(ui);
+                ui.menu_item("Exit");
                 menu.end();
             }
             if let Some(menu) = ui.begin_menu("View") {

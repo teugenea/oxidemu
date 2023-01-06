@@ -38,11 +38,11 @@ impl<'a> GameWindow<'a> {
         ui: &Ui,
         gui_ctx: &mut GuiCtx,
     ) -> Result<(), Box<dyn Msg>> {
-        Window::new("Game")
+        ui.window("Game")
             .flags(WindowFlags::NO_TITLE_BAR | WindowFlags::NO_RESIZE)
             .position(gui_ctx.work_pos(), Condition::Always)
             .size(gui_ctx.work_size(), Condition::Always)
-            .build(ui, || {
+            .build(|| {
                 if self.should_update_render(emul) {
                     self.create_render(emul, gui_ctx.state().render_scale);
                 }
