@@ -4,3 +4,4 @@ pub mod utils;
 pub mod input;
 pub mod emulator;
 pub mod message;
+pub mod bus;
