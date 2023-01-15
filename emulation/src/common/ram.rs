@@ -1,3 +1,4 @@
+use super::component::*;
 use crate::common::message::*;
 
 pub struct Ram {
@@ -25,6 +26,17 @@ impl Ram {
         Ok(self.memory[addr])
     }
 
+    pub fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), Box<dyn Msg>> {
+        if addr > self.memory.len() {
+            let err = ErrorMsg::new(ErrorTopicId::RamWrite.into(), ErrorMsgId::OutOfBounds.into())
+                .add_param(addr.to_string())
+                .add_param(self.memory.len().to_string())
+                .add_param(String::from("1"));
+            return Err(Box::new(err));
+        }
+        Ok(self.memory[addr] = value)
+    }
+
     pub fn read_word(&self, addr: usize) -> Result<u16, Box<dyn Msg>> {
         if self.size < addr || self.size < addr + 1 {
             let err = ErrorMsg::new(ErrorTopicId::RamRead.into(), ErrorMsgId::OutOfBounds.into())
@@ -38,17 +50,6 @@ impl Ram {
         let mut word: u16 = first_byte << 8;
         word = word | second_byte;
         Ok(word)
-    }
-
-    pub fn write_byte(&mut self, addr: usize, value: u8) -> Result<(), Box<dyn Msg>> {
-        if addr > self.memory.len() {
-            let err = ErrorMsg::new(ErrorTopicId::RamWrite.into(), ErrorMsgId::OutOfBounds.into())
-                .add_param(addr.to_string())
-                .add_param(self.memory.len().to_string())
-                .add_param(String::from("1"));
-            return Err(Box::new(err));
-        }
-        Ok(self.memory[addr] = value)
     }
 
     pub fn write_block(&mut self, start_addr: usize, data: Vec<u8>) -> Result<(), Box<dyn Msg>> {
@@ -85,5 +86,25 @@ impl Ram {
         self.memory[addr] = left;
         self.memory[addr+1] = right;
         Ok(())
+    }
+}
+
+impl Component for Ram {
+    fn handle_event(&mut self, event: ComponentEvent) -> Result<ComponentEventResult, Box<dyn Msg>> {
+        match event {
+            ComponentEvent::RamRead{ addr } => {
+                match self.read_byte(addr as usize) {
+                    Ok(byte) => return Result::Ok( ComponentEventResult::RamRead { data: byte } ),
+                    Err(msg) => return Result::Err(msg)
+                }
+            },
+            ComponentEvent::RamWrite { addr, data } => {
+                match self.write_byte(addr as usize, data) {
+                    Ok(()) => return Result::Ok(ComponentEventResult::Empty),
+                    Err(msg) => return Result::Err(msg)
+                }
+            }
+            _ => return Result::Ok(ComponentEventResult::NotProcessed)
+        }
     }
 }

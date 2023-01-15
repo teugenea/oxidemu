@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use crate::common::device::*;
+use super::component::*;
 
-use super::message::ErrorMsg;
+use super::message::{Msg};
 
 pub struct Bus {
-    devices: HashMap<String, Box<dyn Device>>
+    devices: HashMap<String, Box<dyn Component>>
 }
 
 impl Default for Bus {
@@ -15,19 +15,19 @@ impl Default for Bus {
 
 impl Bus {
 
-    pub fn plug_device(&mut self, name: String, device: Box<dyn Device>) {
+    pub fn add_component(&mut self, name: String, device: Box<dyn Component>) {
         self.devices.insert(name, device);
     }
 
-    pub fn unplug_device(&mut self, name: &String) {
-        self.devices.remove(name);
-    }
-
-    pub fn send_event(&mut self, event: DeviceEvent) -> Result<DeviceEventResult, ErrorMsg> {
+    pub fn send_event(&mut self, event: ComponentEvent) -> Result<ComponentEventResult, Box<dyn Msg>> {
         for (_, device) in &mut self.devices {
-            return device.handle_event(event);
+            let result = device.handle_event(event);
+            match result {
+                Ok(ComponentEventResult::NotProcessed) => {},
+                _ => return result
+            }
         }
-        return Result::Ok(DeviceEventResult::NotProcessed);
+        return Result::Ok(ComponentEventResult::NotProcessed);
     }
 
 }

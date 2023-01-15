@@ -1,3 +1,5 @@
+use super::component::*;
+use crate::common::message::*;
 
 pub struct Vram {
     memory: Vec<u32>,
@@ -42,5 +44,11 @@ impl Vram {
             out.extend(value.to_be_bytes());
         }
         out
+    }
+}
+
+impl Component for Vram {
+    fn handle_event(&mut self, event: ComponentEvent) -> Result<ComponentEventResult, Box<dyn Msg>> {
+        return Ok(ComponentEventResult::NotProcessed);
     }
 }

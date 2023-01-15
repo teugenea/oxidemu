@@ -5,4 +5,4 @@ pub mod input;
 pub mod emulator;
 pub mod message;
 pub mod bus;
-pub mod device;
+pub mod component;
